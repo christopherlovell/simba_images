@@ -25,7 +25,7 @@ N_lcs = 50
 
 outs = np.loadtxt(sb.output_file)
 snaps = sb.lightcone_snaps
-zeds = [1./outs[int(snap)] - 1 for snap in snaps]
+# zeds = [1./outs[int(snap)] - 1 for snap in snaps]
 
 # n_neighbours = {snap: None for snap in snaps}
 
@@ -33,14 +33,16 @@ out = {}
 lc_out = {str(_lc): {} for _lc in np.arange(N_lcs)}
 
 # for i,snap in enumerate(snaps):
-snap = '042'
+snap = '159'
 
-z = 1./outs[int(snap)] - 1
-print("\nz:",z,snap)
+# z = 1./outs[int(snap)] - 1
+# print("\nz:",z,snap)
 
 out[snap] = {}
 
-cs = sb.get_caesar(snap)#, fname='m50n1024_%s.hdf5')
+cs = caesar.load(sb.cs_directory+'caesar_0159_z2.025.hdf5')
+# cs = sb.get_caesar(snap,fname='caesar_%s_)#, fname='m50n1024_%s.hdf5')
+
 a = cs.simulation.scale_factor
 
 sfr = np.array([g.sfr.value for g in cs.galaxies])
