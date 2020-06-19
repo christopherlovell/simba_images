@@ -10,7 +10,7 @@ from astropy import constants
 
 from scipy.integrate import simps
 
-# from pyphot.astropy import UnitFilter # unit
+from pyphot.astropy import UnitFilter # unit
 
 class simba:
     def __init__(self):
@@ -151,40 +151,40 @@ class simba:
         return y
    
 
-#     def calc_mags(self,wl,lum,z,filt_wl=[845,846,850,854,855],
-#                   filt_trans=[0.,1.,1.,1.,0.]):
-#         """
-#         
-#         Args:
-#             wl (arr, float): Angstrom
-#             lum (arr, float): erg s^-1
-# 
-#         """
-#         filt_wl = filt_wl * u.micron
-# 
-#         dl = self.cosmo.luminosity_distance(z)
-#         dl = dl.to(u.cm)
-# 
-#         wl *= (1.+z)  # shift by redshift
-# 
-#         # nu = constants.c.cgs/(wl.to(u.cm))
-#         # nu = nu.to(u.Hz)
-# 
-#         # lum /= nu
-#         lum /= wl.to(u.AA) # erg s^-1 AA^-1
-# 
-#         flux = lum / (4.*np.pi*dl**2.) # erg s^-1 cm^-2 AA^-1
-# 
-#         # filt_nu = (2.99792458e8 * u.m / u.s) / filt_wl
-#         pivot_wl = 850 * u.micron
-#         pivot_nu = constants.c / pivot_wl
-# 
-#         tophat = UnitFilter(filt_wl, filt_trans, name='tophat', dtype='energy', unit='micron')
-#         flux_tophat = tophat.get_flux(wl.to(u.AA), flux)# flux_unit='fnu',
-# 
-#         # flam to fnu (erg s^-1 cm^-2 Hz^-1)
-#         flux_tophat = flux_tophat * pivot_wl / pivot_nu
-#         return flux_tophat.to(u.mJy)
+    def calc_mags(self,wl,lum,z,filt_wl=[845,846,850,854,855],
+                  filt_trans=[0.,1.,1.,1.,0.]):
+        """
+        
+        Args:
+            wl (arr, float): Angstrom
+            lum (arr, float): erg s^-1
+
+        """
+        filt_wl = filt_wl * u.micron
+
+        dl = self.cosmo.luminosity_distance(z)
+        dl = dl.to(u.cm)
+
+        wl *= (1.+z)  # shift by redshift
+
+        # nu = constants.c.cgs/(wl.to(u.cm))
+        # nu = nu.to(u.Hz)
+
+        # lum /= nu
+        lum /= wl.to(u.AA) # erg s^-1 AA^-1
+
+        flux = lum / (4.*np.pi*dl**2.) # erg s^-1 cm^-2 AA^-1
+
+        # filt_nu = (2.99792458e8 * u.m / u.s) / filt_wl
+        pivot_wl = 850 * u.micron
+        pivot_nu = constants.c / pivot_wl
+
+        tophat = UnitFilter(filt_wl, filt_trans, name='tophat', dtype='energy', unit='micron')
+        flux_tophat = tophat.get_flux(wl.to(u.AA), flux)# flux_unit='fnu',
+
+        # flam to fnu (erg s^-1 cm^-2 Hz^-1)
+        flux_tophat = flux_tophat * pivot_wl / pivot_nu
+        return flux_tophat.to(u.mJy)
 
 
     def _volume_differential_comoving(self,z_low,z_upp,N=100):
