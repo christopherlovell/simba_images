@@ -212,7 +212,7 @@ SED_MONOCHROMATIC_nlam = 100
 IMAGING = True
 filterdir='/home/c.lovell/codes/powderday/filters/'
 filterfiles = [
-     'arbitrary.filter',
+     'arbitrary_smg.filter',
 #    'ACS_F475W.filter',
 #    'ACS_F606W.filter',
 #    'ACS_F814W.filter',
