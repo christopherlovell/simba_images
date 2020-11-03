@@ -27,8 +27,11 @@ class simba:
         self.lightcone_snaps = np.array([str(s).zfill(3) for s in np.arange(20,145,2)[::-1]])
 
         self.sim_extension = 'm25n512'
-        self.sim_directory='/orange/narayanan/desika.narayanan/gizmo_runs/simba/m25n512/output/'
+        # self.sim_directory='/orange/narayanan/desika.narayanan/gizmo_runs/simba/m25n512/output/'
+        # self.cs_directory=self.sim_directory+'Groups/'
+        self.sim_directory='/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
         self.cs_directory=self.sim_directory+'Groups/'
+
         self.output_file='outputs_boxspace50.txt'
         self.cosmo = cosmo
 
