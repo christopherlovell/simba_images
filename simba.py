@@ -102,8 +102,11 @@ class simba:
         #     raise ValueError('More than one spectrum in directory')
         # elif len(run) == 0:
         #     raise ValueError('No output spectrum in this directory')
-    
-        m = ModelOutput(filename=fname,group=gal_id)
+   
+        if gal_id is None:
+            m = ModelOutput(filename=fname)
+        else:
+            m = ModelOutput(filename=fname,group=gal_id)
         wav,lum = m.get_sed(inclination='all',aperture=-1)
     
         # set units

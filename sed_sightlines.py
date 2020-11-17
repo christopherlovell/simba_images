@@ -25,6 +25,7 @@ with open('m100_sed/galaxy_selection.json', 'r') as fp:
     hidx = np.array([int(h['hidx']) for k,h in _dat.items()])
     #_coods = [h['lcone_pos'] for k,h in _dat.items()]
 
+
 for _gidx in ['3']:#gidx:
 
     # snap_fname = f'{rt_directory}/snap_{snap}/gal_{_gidx}/snap{snap}.galaxy*.rtout.sed'
@@ -51,9 +52,9 @@ for _gidx in ['3']:#gidx:
 
 
 fig,ax = plt.subplots(1,1)
-# ax.plot(np.log10(wav),lum.T,alpha=0.1,color='black')
-# ax.plot(np.log10(wav_hr),lum_hr.T,alpha=0.1,color='black')
-ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
+ax.plot(np.log10(wav),lum.T,alpha=0.1,color='black')
+ax.plot(np.log10(wav_hr),lum_hr.T,alpha=0.1,color='red')
+# ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
 plt.show()
 
 # with open('data/spectra.json', 'w') as fp:

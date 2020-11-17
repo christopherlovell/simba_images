@@ -6,7 +6,6 @@ import functools
 
 from hyperion.model import ModelOutput
 from hyperion.util.constants import pc
-from astropy.convolution import convolve, convolve_fft, Gaussian1DKernel,Gaussian2DKernel
 import astropy.units as u
 from astropy.cosmology import Planck15 as cosmo
 
@@ -20,21 +19,28 @@ from multiprocessing import Pool
 import glob
 import pdb
 
+
 def get_image(filename,dist):
     try:
         m = ModelOutput(filename)
         return m.get_image(inclination='all',distance=luminosity_distance,units='Jy')
-    except OSError:
+    except (OSError,ValueError) as e:
         print("OS Error in reading in: "+filename)
         pass
 
 
-for gidx in ['3','8','51','54','94','100','134','139']:
+for gidx in ['3','8','51','54',
+             '94'#,
+             #'100','134','139'
+             ]:
+
     _gal = int(gidx)
 
     _dir = '/blue/narayanan/c.lovell/simba/m100n1024/run/snap_078/gal_%s/*.rtout.image'%_gal
     files = glob.glob(_dir)
+    print("N files:",len(files))
     image_limit = 30 #kpc
+    L_lim =30
     
     wav = 850
     nprocesses=16
@@ -52,6 +58,7 @@ for gidx in ['3','8','51','54','94','100','134','139']:
     pool.close()
     
     iwav = np.argmin(np.abs( (wav/(1+z)) - result[0].wav))
+    print(iwav)
     print("wl:",result[0].wav[iwav] * (1+z))
     
     
@@ -86,7 +93,10 @@ for gidx in ['3','8','51','54','94','100','134','139']:
                             vmin=-10,
                             cmap=plt.cm.plasma, origin='lower', 
                             extent=[-image_limit, image_limit, -image_limit, image_limit])
-        
+   
+        ax.set_xlim(-L_lim, L_lim)
+        ax.set_ylim(-L_lim, L_lim)
+
         # cax = fig.add_axes([0.82, 0.1, 0.03, 0.7])
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='5%', pad=0.05)

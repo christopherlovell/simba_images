@@ -1,0 +1,25 @@
+#! /bin/bash
+#SBATCH --job-name=physical_maps
+#SBATCH --output=logs/filter_out.%a.%N.%j
+#SBATCH --error=logs/filter_err.%a.%N.%j
+#SBATCH --time=00:03:00
+# #SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --mem-per-cpu=3800
+#SBATCH --account narayanan
+#SBATCH --qos narayanan
+#SBATCH --partition=hpg2-compute
+#SBATCH --array=0-7
+
+module purge
+module load git/2.14.1 gcc/8.2.0 openmpi/4.0.1 hdf5/1.10.1
+module load conda/4.8.3
+
+source activate pday
+
+python physical_maps.py $SLURM_ARRAY_TASK_ID
+
+echo "Job done, info follows..."
+sacct -j $SLURM_JOBID --format=JobID,JobName,Partition,Elapsed,ExitCode,MaxRSS,CPUTime,SystemCPU,ReqMem
+exit
+
