@@ -73,7 +73,7 @@ filt_wl, filt_trans = sb.scuba850_filter()
 norm = mpl.colors.Normalize(vmin=0, vmax=1)
 m = cm.ScalarMappable(norm=norm, cmap=cm.copper)
 
-for gidx,_N in zip([3],#,8,51,54,94,100,134,139],
+for gidx,_N in zip([3,8,51,54,94,100,134,139],
                    [10,50,50,50,50,10,50,50]):
     
 
@@ -105,7 +105,7 @@ for gidx,_N in zip([3],#,8,51,54,94,100,134,139],
     flux_850 = sb.calc_mags(wav.copy(), spec.copy(), z,
                             filt_wl=filt_wl, filt_trans=filt_trans).value
     
-    with h5py.File('sed_out.h5','w') as f:
+    with h5py.File('sed_out.h5','a') as f:
         f.require_group(str(gidx))
         dset = f.create_dataset('%s/Wavelength'%gidx, data=wav)
         dset.attrs['Units'] = 'microns'
@@ -115,41 +115,41 @@ for gidx,_N in zip([3],#,8,51,54,94,100,134,139],
         dset.attrs['Units'] = 'mJy'
         f.create_dataset('%s/cosine similarity'%gidx,data=cos_dist)
 
-    fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,15))
-
-    for ax in [ax1,ax2]:
-        [ax.plot(np.log10(wav.value * (1+z)), s, alpha=1,
-            c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
-
-    mean_spec = np.mean(spec.value,axis=0)
-    [ax3.plot(wav.value * (1+z), s/mean_spec, alpha=1, 
-            c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
-
-
-    for ax in [ax1,ax2]:
-        ax.set_ylim(0,)
-        ax.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=15)
-        ax.set_ylabel('$\mathrm{erg \,/\, s}$', size=15)
-    
-    for ax in [ax2,ax3]:
-        ax.set_xlim(2,3)
-
-    mean_flux = np.round(np.mean(flux_850),2)
-    ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
-    ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
-    ax3.set_xlabel('$\lambda \,/\, \AA$',size=15)
-    ax3.set_ylabel('$\mathrm{Flux}_i / \mathrm{Flux_{mean}}$',size=15)
-    ax3.set_ylim(0.7,1.3)
-    ax3.set_xlim(250,1000)
-
-    cax = fig.add_axes([0.14, 0.7, 0.04, 0.15])
-    cbar = fig.colorbar(m, aspect=10, orientation='vertical',
-                        cax=cax, label='cosine similarity')
-
-    # for i,_l in enumerate(lum_hr):
-    #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))
-    # ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
-    plt.show()
-    # plt.savefig(f'plots/cosine_similarity_g{gidx}.png',dpi=300,bbox_inches='tight')
-    plt.close()
+#     fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,15))
+# 
+#     for ax in [ax1,ax2]:
+#         [ax.plot(np.log10(wav.value * (1+z)), s, alpha=1,
+#             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
+# 
+#     mean_spec = np.mean(spec.value,axis=0)
+#     [ax3.plot(wav.value * (1+z), s/mean_spec, alpha=1, 
+#             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
+# 
+# 
+#     for ax in [ax1,ax2]:
+#         ax.set_ylim(0,)
+#         ax.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=15)
+#         ax.set_ylabel('$\mathrm{erg \,/\, s}$', size=15)
+#     
+#     for ax in [ax2,ax3]:
+#         ax.set_xlim(2,3)
+# 
+#     mean_flux = np.round(np.mean(flux_850),2)
+#     ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
+#     ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
+#     ax3.set_xlabel('$\lambda \,/\, \AA$',size=15)
+#     ax3.set_ylabel('$\mathrm{Flux}_i / \mathrm{Flux_{mean}}$',size=15)
+#     ax3.set_ylim(0.7,1.3)
+#     ax3.set_xlim(250,1000)
+# 
+#     cax = fig.add_axes([0.14, 0.7, 0.04, 0.15])
+#     cbar = fig.colorbar(m, aspect=10, orientation='vertical',
+#                         cax=cax, label='cosine similarity')
+# 
+#     # for i,_l in enumerate(lum_hr):
+#     #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))
+#     # ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
+#     plt.show()
+#     # plt.savefig(f'plots/cosine_similarity_g{gidx}.png',dpi=300,bbox_inches='tight')
+#     plt.close()
 
