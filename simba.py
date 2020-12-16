@@ -63,6 +63,25 @@ class simba:
     
     
         return run[0][len(directory)+15:-10]
+
+    def luminosity_to_flux_density(self,wl,spec,z):
+
+        wl *= u.micron
+        spec *= u.erg / u.s
+
+        dl = self.cosmo.luminosity_distance(z)
+        dl = dl.to(u.cm)
+
+        wl *= (1.+z)  # shift by redshift
+        
+        nu = constants.c.cgs/(wl.to(u.cm))
+        nu = nu.to(u.Hz)
+
+        # spec /= wl.to(u.AA) # erg s^-1 AA^-1
+        spec /= nu # erg s^-1 Hz^-1
+
+        fd = spec / (4.*np.pi*dl**2.) # erg s^-1 cm^-2 Hz^-1
+        return fd.to(u.mJy)
     
 
 #     """

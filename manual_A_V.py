@@ -69,7 +69,23 @@ subset_dir='/blue/narayanan/c.lovell/simba/m100n1024/out/snap_078/'
 
 A_V = {s: None for s in np.arange(len(subset_files))}
 
+
+
+## Plot the particle distributions to check orientations ##
+fig, ((ax1,ax2,ax3),(ax4,ax5,ax6),(ax1b,ax2b,ax3b),(ax4b,ax5b,ax6b)) = \
+        plt.subplots(4,3,figsize=(10,10))
+fig, ((ax1,ax2,ax3),(ax4,ax5,ax6)) = plt.subplots(2,3,figsize=(10,5))
+axes = [ax1,ax2,ax3,ax4,ax5,ax6]
+
+cmap = cmaps.night()
+roll,extent=0,30
+## ---------- ##
+
+
 for s,s_file in enumerate(subset_files):
+# if True:
+#     s = 0
+#     s_file = subset_files[0]
     ds = yt.load(subset_dir+s_file)
 
     halo = halos[s]
@@ -77,6 +93,7 @@ for s,s_file in enumerate(subset_files):
     phot = pyloser.photometry(cs, halo)
     phot.ssp_table_file = '/home/c.lovell/codes/caesar/FSPS_Chab_EL.hdf5'
     init_kerntab(phot)
+    hcood = galaxy.pos.value
 
     with h5py.File(subset_dir+s_file,'r') as f:
         _fact = 1 / cs.simulation.hubble_constant
@@ -91,7 +108,7 @@ for s,s_file in enumerate(subset_files):
     _pos = galaxy.pos.to('kpccm').value
     _mask = (cdist(spos, [_pos]) < 30).flatten()
     spos = spos[_mask,:]
-    _mask = (cdist(gpos, [_pos]) < 40).flatten()
+    _mask = (cdist(gpos, [_pos]) < 30).flatten()
     gpos = gpos[_mask]
     spos = spos.astype(np.float64)
     gpos = gpos.astype(np.float64)
@@ -105,37 +122,41 @@ for s,s_file in enumerate(subset_files):
     AV_fact = 1./(2.2e21*0.0189) # Watson 2011 arXiv:1107.6031 (note: Watson calibrates to Zsol=0.0189)
     usedust = phot.use_dust
 
-    theta = np.array([90,90, 90, 90,0,180]) * np.pi/180.
-    phi = np.array([0, 90,180,270,0,  0]) * np.pi/180.
+    # theta = np.array([90,90, 90, 90,0,180]) * np.pi/180.
+    # phi = np.array([0, 90,180,270,0,  0]) * np.pi/180.
+    np.random.seed(0); _N = 50
+    theta = np.arccos(1 - 2 * np.random.rand(_N)) #* (180 / np.pi)
+    phi   = 2 * np.pi * np.random.rand(_N) #* (180 / np.pi)
     alpha,beta = transform_coods(theta,phi,tol=15)
 
     A_V[s] = {i: np.zeros(len(spos)) for i in np.arange(len(alpha))}
 
+    # for i,(_a,_b,ax) in enumerate(zip(alpha,beta,axes)):
     for i,(_a,_b) in enumerate(zip(alpha,beta)):
     
         if (_a != 0.) | (_b != 0.):
             print("Rotating (idx: %d | alpha=%f, beta=%f)"%(i,_a,_b))
             _spos = rotator(spos.copy(), _a, _b)
             _gpos = rotator(gpos.copy(), _a, _b)
+            _hcood = rotator(hcood.copy(), _a,_b)
         else:
-            _spos = spos.copy(); _gpos = gpos.copy()
-    
+            _spos = spos.copy(); _gpos = gpos.copy(); _hcood = hcood.copy() 
+   
+#         if s==0:
+#             mask = np.random.rand(len(_gpos)) < 0.5
+#             ax.scatter(_gpos[mask,0],_gpos[mask,1],s=1,alpha=0.01,label=i)
+#             ax.scatter(_hcood[0],_hcood[1],s=5)
+#             ax.legend(); ax.set_aspect('equal')
+
+
         for ip in np.arange(len(spos)):
             A_V[s][i][ip] = _star_AV(ip, idir, igstart, igend, _spos, _gpos, 
                                   gm, gZ, ghsm, Lbox, nkerntab, kerntab, redshift, 
                                   dtm_MW,  NHcol_fact, AV_fact, usedust)
 
 
+# plt.show()
 
-# fig, ((ax1,ax2,ax3),(ax4,ax5,ax6),(ax1b,ax2b,ax3b),(ax4b,ax5b,ax6b)) = \
-#         plt.subplots(4,3,figsize=(10,10))
-# 
-# axes = [ax1,ax2,ax3,ax4,ax5,ax6]
-# axesb = [ax1b,ax2b,ax3b,ax4b,ax5b,ax6b]
-# 
-# hcood = galaxies[0].pos.value
-# cmap = cmaps.night()
-# roll,extent=0,30
 # 
 # for i,(_a,_b,t,p,ax,axb) in enumerate(zip(alpha,beta,theta,phi,axes,axesb)):
 # 
@@ -143,7 +164,7 @@ for s,s_file in enumerate(subset_files):
 #         print("Rotating (idx: %d | alpha=%f, beta=%f)"%(i,_a,_b))
 #         _spos = rotator(spos.copy(), _a, _b)
 #         _gpos = rotator(gpos.copy(), _a, _b)
-#         _hcood = rotator(hcood.copy(), _a,_b)
+
 #     else:
 #         _spos = spos.copy(); _gpos = gpos.copy(); _hcood = _hcood.copy()
 # 
@@ -193,20 +214,23 @@ for s,s_file in enumerate(subset_files):
 
 _hidx = 0
 lenAV = len(A_V[_hidx][0])
-plt.plot(np.log10(np.sort(A_V[_hidx][0])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C0', label='0')
-plt.plot(np.log10(np.sort(A_V[_hidx][2])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C0', linestyle='dashed', label='2')
+[plt.plot(np.log10(np.sort(a_v)),
+          np.cumsum(np.ones(len(a_v)))/lenAV,label=k) for k,a_v in A_V[_hidx].items()]
 
-plt.plot(np.log10(np.sort(A_V[_hidx][1])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C1', label='1')
-plt.plot(np.log10(np.sort(A_V[_hidx][3])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C1', linestyle='dashed', label='3')
-
-plt.plot(np.log10(np.sort(A_V[_hidx][4])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C2', label='4')
-plt.plot(np.log10(np.sort(A_V[_hidx][5])),
-         np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C2', linestyle='dashed', label='5')
+# plt.plot(np.log10(np.sort(A_V[_hidx][0])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C0', label='0')
+# plt.plot(np.log10(np.sort(A_V[_hidx][2])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C0', linestyle='dashed', label='2')
+# 
+# plt.plot(np.log10(np.sort(A_V[_hidx][1])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C1', label='1')
+# plt.plot(np.log10(np.sort(A_V[_hidx][3])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C1', linestyle='dashed', label='3')
+# 
+# plt.plot(np.log10(np.sort(A_V[_hidx][4])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C2', label='4')
+# plt.plot(np.log10(np.sort(A_V[_hidx][5])),
+#          np.cumsum(np.ones(len(A_V[_hidx][0])))/lenAV, color='C2', linestyle='dashed', label='5')
 
 plt.legend()
 plt.xlim(-6,1)
@@ -217,33 +241,32 @@ plt.ylabel('$f$')
 plt.show()
 
 
-_g = 1#_hidx
+_g = _hidx
 gidx = galaxies[_g].GroupID 
 with h5py.File('sed_out.h5','r') as f:
     wav = f['%s/Wavelength'%gidx][:]
     spec = f['%s/SED'%gidx][:]
-    flux_850 = f['%s/850 flux'%gidx][:]
+    # flux_850 = f['%s/850 flux'%gidx][:]
 
 
-
-_p = 95
+# spec = spec[:10]
+_p = 90
 z = redshift
 
-a_v = np.array([np.percentile(A_V[_g][i],_p) for i in np.arange(6)])
-norm = mpl.colors.Normalize(vmin=a_v.min(), vmax=a_v.max())
+a_v = np.array([np.percentile(A_V[_g][i],_p) for i in np.arange(len(A_V[_g]))])
+norm = mpl.colors.LogNorm(vmin=a_v.min(), vmax=a_v.max())
 m = cm.ScalarMappable(norm=norm, cmap=cm.copper)
 
 fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,15))
 
 for ax in [ax1,ax2]:
     [ax.plot(np.log10(wav * (1+z)), s, alpha=1,
-        c=m.to_rgba(np.percentile(A_V[_g][i],_p))) for i,s in enumerate(spec)]
+         c=m.to_rgba(np.percentile(A_V[_g][i],_p))) 
+        for i,s in enumerate(spec)]
 
 mean_spec = np.mean(spec,axis=0)
 [ax3.plot(wav * (1+z), s/mean_spec, alpha=1,
         c=m.to_rgba(np.percentile(A_V[_g][i],_p))) for i,s in enumerate(spec)]
-        # c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
-
 
 for ax in [ax1,ax2]:
     ax.set_ylim(0,)
@@ -253,10 +276,10 @@ for ax in [ax1,ax2]:
 for ax in [ax2,ax3]:
     ax.set_xlim(2,3)
 
-mean_flux = np.round(np.mean(flux_850),2)
+# mean_flux = np.round(np.mean(flux_850),2)
 ax1.text(0.2,0.9,'$z = %.2f$'%z,size=13,transform=ax1.transAxes)
-ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
-ax3.set_xlabel('$\lambda \,/\, \AA$',size=15)
+# ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
+ax3.set_xlabel('$\lambda \,/\, \mu m$',size=15)
 ax3.set_ylabel('$\mathrm{Flux}_i / \mathrm{Flux_{mean}}$',size=15)
 ax3.set_ylim(0.7,1.3)
 ax3.set_xlim(250,1000)
@@ -268,5 +291,4 @@ cbar = fig.colorbar(m, aspect=10, orientation='vertical',
 plt.show()
 # plt.savefig(f'plots/A_V_sed_g{gidx}.png',dpi=300,bbox_inches='tight')
 plt.close()
-
 

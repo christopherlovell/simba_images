@@ -76,20 +76,21 @@ for gidx in [3,8,51,54,94,100,134,139]:
     print(cos_dist)
 
 
-# fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2, figsize=(11,11))
-# for species,ax in zip(['stellar_L','baryon_L','dm_L','gas_L'],
-#                       [ax1,ax2,ax3,ax4]):
-# 
-#     _L = np.array([gal.rotation[species].value for gal in cs.galaxies[:100]])
-#     _L[_L == 0.] = 1e4
-#     ax.hist(np.log10(_L[_L[:,0] > 0,0]), histtype='step', label='x = i') 
-#     ax.hist(np.log10(_L[_L[:,1] > 0,1]), histtype='step', label='x = j') 
-#     ax.hist(np.log10(_L[_L[:,2] > 0,2]), histtype='step', label='x = k') 
-#     ax.legend()
-#     ax.text(0.1,0.5,species,transform=ax.transAxes)
-#     ax.set_xlabel('$\mathrm{log_{10}}(L_{x})$')
-#     ax.set_ylabel('$N$')
-#    
-# 
+fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2, figsize=(11,11))
+for species,ax in zip(['stellar_L','baryon_L','dm_L','gas_L'],
+                      [ax1,ax2,ax3,ax4]):
+
+    _L = np.array([gal.rotation[species].value for gal in cs.galaxies[:100]])
+    _L[_L == 0.] = 1e4
+    ax.hist(np.log10(_L[_L[:,0] > 0,0]), histtype='step', label='x = i') 
+    ax.hist(np.log10(_L[_L[:,1] > 0,1]), histtype='step', label='x = j') 
+    ax.hist(np.log10(_L[_L[:,2] > 0,2]), histtype='step', label='x = k') 
+    ax.legend()
+    ax.text(0.1,0.5,species,transform=ax.transAxes)
+    ax.set_xlabel('$\mathrm{log_{10}}(L_{x})$')
+    ax.set_ylabel('$N$')
+   
+plt.show()
 # plt.savefig('angular_momentum_vector_components.png', dpi=300, bbox_inches='tight')
+plt.close()
 

@@ -15,7 +15,8 @@ from scipy.spatial.distance import cosine
 from hyperion.model import ModelOutput
 
 import caesar 
- 
+from caesar.data_manager import DataManager
+
 from simba import simba 
 sb = simba() 
 
@@ -55,29 +56,34 @@ z = 2.025
 rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run'
 #rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run_sed'
 
+_dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
+cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
+cs.data_manager = DataManager(cs)
+
 _dat = json.load(open('m100/galaxy_selection.json','r'))
+galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
 
-cs = caesar.load('%sm100n1024_%s.hdf5'%(sb.cs_directory,snap))
-    
+# cs = caesar.load('%sm100n1024_%s.hdf5'%(sb.cs_directory,snap))
+
+
+
+
 ## spherical coordinates of viewing angle in box coordinates (not pd)
-phi   = np.array([0,90,180,270,0,0]) * (np.pi/180.)
-theta = np.array([90,90,90,90,0,180]) * (np.pi/180.)
-# np.random.seed(0)
-# theta = np.arccos(1 - 2 * np.random.rand(_N)) #* (180 / np.pi)
-# phi   = 2 * np.pi * np.random.rand(_N) #* (180 / np.pi)
+# phi   = np.array([0,90,180,270,0,0]) * (np.pi/180.)
+# theta = np.array([90,90,90,90,0,180]) * (np.pi/180.)
+np.random.seed(0); _N = 50
+theta = np.arccos(1 - 2 * np.random.rand(_N)) #* (180 / np.pi)
+phi   = 2 * np.pi * np.random.rand(_N) #* (180 / np.pi)
 
-
-filt_wl, filt_trans = sb.scuba850_filter()
-
+# filt_wl, filt_trans = sb.scuba850_filter()
 
 norm = mpl.colors.Normalize(vmin=0, vmax=1)
 m = cm.ScalarMappable(norm=norm, cmap=cm.copper)
 
-for gidx,_N in zip([3,8,51,54,94,100,134,139],
-                   [10,50,50,50,50,10,50,50]):
-    
-
-
+gindexes = [3,8,51,54,94,100,134,139]
+cos_dist = {gidx: None for gidx in gindexes}
+S350 = {gidx: None for gidx in gindexes}
+for i,gidx in enumerate(gindexes):
     print(gidx)
     _g = cs.galaxies[gidx]     
 
@@ -89,56 +95,47 @@ for gidx,_N in zip([3,8,51,54,94,100,134,139],
 
     _L = recalculate_ang_mom_vector(_g,ptype=0)
     # cos_dist = [round(1 - cosine(_c,_g.rotation['baryon_L']),3) for _c in coods] 
-    cos_dist = [round(1 - cosine(_c,_L),3) for _c in coods] 
-    print(gidx,np.log10(np.linalg.norm(_L)))
-    print(cos_dist)
+    cos_dist[gidx] = [round(1 - cosine(_c,_L),3) for _c in coods] 
+    # print(gidx,np.log10(np.linalg.norm(_L)))
+    # print(cos_dist)
 
-    # snap_fname = f'{rt_directory}/snap_{snap}_hires2/gal_{gidx}/snap{snap}.galaxy*.rtout.sed'
-    snap_fname = f'{rt_directory}/snap_{snap}/gal_{gidx}/snap{snap}.galaxy*.rtout.sed'
-    fname = glob.glob(snap_fname)[0]
+    gidx = galaxies[i].GroupID
+    with h5py.File('sed_out_hires.h5','r') as f:
+        wav = f['%s/Wavelength'%gidx][:]
+        spec = f['%s/SED'%gidx][:]
+        # flux_850 = f['%s/850 flux'%gidx][:]
 
-    wav,spec = sb.get_spectrum(fname,gal_id=None)
-    print(spec.shape)
-    # m = ModelOutput(filename=fname)#,group='00000')
-    # wav,spec = m.get_sed(inclination='all',aperture=-1)
-
-    flux_850 = sb.calc_mags(wav.copy(), spec.copy(), z,
-                            filt_wl=filt_wl, filt_trans=filt_trans).value
     
-    with h5py.File('sed_out.h5','a') as f:
-        f.require_group(str(gidx))
-        dset = f.create_dataset('%s/Wavelength'%gidx, data=wav)
-        dset.attrs['Units'] = 'microns'
-        dset = f.create_dataset('%s/SED'%gidx, data=spec)
-        dset.attrs['Units'] = 'erg/s'
-        dset = f.create_dataset('%s/850 flux'%gidx,data=flux_850)
-        dset.attrs['Units'] = 'mJy'
-        f.create_dataset('%s/cosine similarity'%gidx,data=cos_dist)
+    S350[gidx] = spec[:,np.argmin(np.abs((wav*(1+z))-350))]
 
-#     fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,15))
+    # flux_850 = sb.calc_mags(wav.copy(), spec.copy(), z,
+    #                         filt_wl=filt_wl, filt_trans=filt_trans).value
+
+#     fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,12))
+#     plt.subplots_adjust(hspace=0.25)
 # 
 #     for ax in [ax1,ax2]:
-#         [ax.plot(np.log10(wav.value * (1+z)), s, alpha=1,
+#         [ax.plot(np.log10(wav * (1+z)), s, alpha=1,
 #             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
 # 
-#     mean_spec = np.mean(spec.value,axis=0)
-#     [ax3.plot(wav.value * (1+z), s/mean_spec, alpha=1, 
+#     mean_spec = np.mean(spec,axis=0)
+#     [ax3.plot(wav * (1+z), s/mean_spec, alpha=1, 
 #             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
 # 
 # 
 #     for ax in [ax1,ax2]:
 #         ax.set_ylim(0,)
-#         ax.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=15)
-#         ax.set_ylabel('$\mathrm{erg \,/\, s}$', size=15)
+#         ax.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=13)
+#         ax.set_ylabel('$\mathrm{erg \,/\, s}$', size=13)
 #     
 #     for ax in [ax2,ax3]:
 #         ax.set_xlim(2,3)
 # 
-#     mean_flux = np.round(np.mean(flux_850),2)
+#     # mean_flux = np.round(np.mean(flux_850),2)
 #     ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
-#     ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
-#     ax3.set_xlabel('$\lambda \,/\, \AA$',size=15)
-#     ax3.set_ylabel('$\mathrm{Flux}_i / \mathrm{Flux_{mean}}$',size=15)
+#     # ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
+#     ax3.set_xlabel('$\lambda \,/\, \AA$',size=13)
+#     ax3.set_ylabel('$\mathrm{S}_i \,/\, \mathrm{S_{mean}}$',size=13)
 #     ax3.set_ylim(0.7,1.3)
 #     ax3.set_xlim(250,1000)
 # 
@@ -152,4 +149,22 @@ for gidx,_N in zip([3,8,51,54,94,100,134,139],
 #     plt.show()
 #     # plt.savefig(f'plots/cosine_similarity_g{gidx}.png',dpi=300,bbox_inches='tight')
 #     plt.close()
+
+fig,ax = plt.subplots(1,1)
+for i,gidx in enumerate([3,51,94,139]):
+    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
+               color='C%i'%i, label=gidx)
+
+for i,gidx in enumerate([8,54,100,134]):
+    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
+               color='C%i'%(i+4), alpha=0.3, label='%i'%gidx)
+
+ax.set_ylim(0,1)
+ax.set_ylabel('$C_i$', size=14)
+ax.set_xlabel('$S_{350,i} \,/\, S_{350,\mathrm{min}}$', size=14)
+ax.legend()
+# plt.show()
+plt.savefig('plots/cosine_similarity.png',dpi=300,bbox_inches='tight')
+
+
 

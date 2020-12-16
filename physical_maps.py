@@ -187,7 +187,7 @@ for gidx in ['3','8','51','54','94','100','134','139']:
         ax4.yaxis.set_label_position('right')
         
         # plt.show() 
-        plt.savefig('images/m100_physical_g%s_o%s_physical.png'%(gidx,_orientation), 
+        plt.savefig('images/m100_physical_g%s_o%s.png'%(gidx,_orientation), 
                     dpi=300, bbox_inches='tight')
 
         plt.close()
