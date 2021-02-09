@@ -125,7 +125,7 @@ if True:
 
     cax = fig.add_axes([0.68, 0.7, 0.04, 0.15])
     cbar = fig.colorbar(m, aspect=10, orientation='vertical',
-                        cax=cax, label='cosine similarity')
+                        cax=cax, label='$\left| \,\mathrm{Cosine \; similarity}\, \\right|$')
 
     # for i,_l in enumerate(lum_hr):
     #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))

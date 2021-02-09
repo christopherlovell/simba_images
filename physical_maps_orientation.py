@@ -12,6 +12,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import ScalarFormatter
 
 import sphviewer as sph
 from sphviewer.tools import cmaps
@@ -72,6 +73,9 @@ galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
 
 fig,axes = plt.subplots(4,4,figsize=(11,11)) 
 plt.subplots_adjust(wspace=0.05, hspace=0.05)
+
+galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
+                94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
 
 for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
 # for k,gidx in enumerate(['94','100','134','139']):
@@ -151,7 +155,7 @@ for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
         spec = sb.luminosity_to_flux_density(wav,spec,redshift)
 
 
-    [axes[3,k].plot(np.log10(wav*(1+redshift)), s, color='black',alpha=0.2) for s in spec]
+    [axes[3,k].plot((wav*(1+redshift)), s, color='black',alpha=0.2) for s in spec]
     
     ## ---- plot orthogonal SEDs
     with h5py.File('sed_out_orthogonal.h5','r') as f:
@@ -161,17 +165,18 @@ for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
         spec = sb.luminosity_to_flux_density(wav,spec,redshift)
 
     for axidx,(s,c) in enumerate(zip(spec[[0,3,4]],['C0','C1','C2'])):
-        axes[3,k].plot(np.log10(wav*(1+redshift)), s, color=c,alpha=1)
+        axes[3,k].plot((wav*(1+redshift)), s, color=c,alpha=1)
         circle = plt.Circle((0, 0), 20, color=c, fill=False)
         axes[axidx,k].add_artist(circle)
 
-    axes[3,k].set_xlim(2.01,3)
+    axes[3,k].set_xlim(1e2,1e3)
     axes[3,k].set_ylim(0,93)
     axes[3,k].grid(alpha=0.1)
     axes[3,k].text(0.95, 0.9, '$S_{850}=%.2f \; \mathrm{mJy}$'%np.median(f850).value, 
                    ha='right', transform=axes[3,k].transAxes)
          
-    axes[0,k].text(0.7, 0.9, 'g:%s'%gidx, transform=axes[0,k].transAxes, color='white')
+    axes[0,k].text(0.98, 0.9, '$\mathrm{%s}$'%galaxy_names[int(gidx)], 
+                   transform=axes[0,k].transAxes, color='black', ha='right')
 
 
 cax = fig.add_axes([0.91, 0.698, 0.01, 0.18])
@@ -180,8 +185,20 @@ cbar.ax.set_ylabel('$\mathrm{M_{\odot} \; kpc^{-2}}$', size=12)
     
 axes[3,0].set_ylabel('$\mathrm{mJy}$',size=12)
 
+
+from matplotlib.ticker import MultipleLocator
 for ax in axes[-1,:]:
     ax.set_xlabel('$\mathrm{log_{10}(\lambda \,/\, \mu m)}$',size=12)
+    ax.set_xscale('log')
+    formatter = ScalarFormatter()
+    formatter.set_scientific(False)
+    ax.xaxis.set_major_formatter(formatter)
+    ax.xaxis.set_minor_formatter(formatter)
+    ax.xaxis.set_major_locator(MultipleLocator(100))
+    ax.set_xticks([100,200,300,400,500,600,700,800,900,1000])
+    ax.set_xticklabels(['100','200','','400','','','','800','',''])
+
+
 for ax in axes[:3,0]: 
     ax.set_ylabel('$\mathrm{kpc}$', size=12)
 

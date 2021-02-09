@@ -20,8 +20,6 @@ from caesar.data_manager import DataManager
 from simba import simba 
 sb = simba() 
 
-
-
 def recalculate_ang_mom_vector(_g,ptype=4):
     """
     Recalculate angular momentum vector
@@ -43,12 +41,9 @@ def recalculate_ang_mom_vector(_g,ptype=4):
     _coods -= _g.pos.value 
 
     R = np.sqrt(np.sum(_coods**2,axis=1))
-
     mask = R < 100;
-     
     L = np.sum(np.cross(_coods[mask], (_vels[mask] * _masses[mask,None])),axis=0)
     return L 
-
 
 
 snap = '078'
@@ -62,10 +57,6 @@ cs.data_manager = DataManager(cs)
 
 _dat = json.load(open('m100/galaxy_selection.json','r'))
 galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
-
-# cs = caesar.load('%sm100n1024_%s.hdf5'%(sb.cs_directory,snap))
-
-
 
 
 ## spherical coordinates of viewing angle in box coordinates (not pd)
@@ -94,70 +85,31 @@ for i,gidx in enumerate(gindexes):
     coods = np.round(coods,2)
 
     _L = recalculate_ang_mom_vector(_g,ptype=0)
-    # cos_dist = [round(1 - cosine(_c,_g.rotation['baryon_L']),3) for _c in coods] 
     cos_dist[gidx] = [round(1 - cosine(_c,_L),3) for _c in coods] 
-    # print(gidx,np.log10(np.linalg.norm(_L)))
-    # print(cos_dist)
 
     gidx = galaxies[i].GroupID
     with h5py.File('sed_out_hires.h5','r') as f:
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
-        # flux_850 = f['%s/850 flux'%gidx][:]
-
     
     S350[gidx] = spec[:,np.argmin(np.abs((wav*(1+z))-350))]
 
-    # flux_850 = sb.calc_mags(wav.copy(), spec.copy(), z,
-    #                         filt_wl=filt_wl, filt_trans=filt_trans).value
-
-#     fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(5,12))
-#     plt.subplots_adjust(hspace=0.25)
-# 
-#     for ax in [ax1,ax2]:
-#         [ax.plot(np.log10(wav * (1+z)), s, alpha=1,
-#             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
-# 
-#     mean_spec = np.mean(spec,axis=0)
-#     [ax3.plot(wav * (1+z), s/mean_spec, alpha=1, 
-#             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
-# 
-# 
-#     for ax in [ax1,ax2]:
-#         ax.set_ylim(0,)
-#         ax.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=13)
-#         ax.set_ylabel('$\mathrm{erg \,/\, s}$', size=13)
-#     
-#     for ax in [ax2,ax3]:
-#         ax.set_xlim(2,3)
-# 
-#     # mean_flux = np.round(np.mean(flux_850),2)
-#     ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
-#     # ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
-#     ax3.set_xlabel('$\lambda \,/\, \AA$',size=13)
-#     ax3.set_ylabel('$\mathrm{S}_i \,/\, \mathrm{S_{mean}}$',size=13)
-#     ax3.set_ylim(0.7,1.3)
-#     ax3.set_xlim(250,1000)
-# 
-#     cax = fig.add_axes([0.14, 0.7, 0.04, 0.15])
-#     cbar = fig.colorbar(m, aspect=10, orientation='vertical',
-#                         cax=cax, label='cosine similarity')
-# 
-#     # for i,_l in enumerate(lum_hr):
-#     #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))
-#     # ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
-#     plt.show()
-#     # plt.savefig(f'plots/cosine_similarity_g{gidx}.png',dpi=300,bbox_inches='tight')
-#     plt.close()
 
 fig,ax = plt.subplots(1,1)
-for i,gidx in enumerate([3,51,94,139]):
-    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
-               color='C%i'%i, label=gidx)
 
-for i,gidx in enumerate([8,54,100,134]):
+galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
+                94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
+
+
+for i,gidx in zip([0,2,4,7],[3,51,94,139]):
+    print(i,gidx)
     ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
-               color='C%i'%(i+4), alpha=0.3, label='%i'%gidx)
+               color='C%i'%i, label=galaxy_names[gidx])
+
+for i,gidx in zip([1,3,5,6],[8,54,100,134]):
+    print(i,gidx)
+    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
+               color='C%i'%i, alpha=0.3, label=galaxy_names[gidx])
 
 ax.set_ylim(0,1)
 ax.set_ylabel('$C_i$', size=14)
@@ -165,6 +117,4 @@ ax.set_xlabel('$S_{350,i} \,/\, S_{350,\mathrm{min}}$', size=14)
 ax.legend()
 # plt.show()
 plt.savefig('plots/cosine_similarity.png',dpi=300,bbox_inches='tight')
-
-
 
