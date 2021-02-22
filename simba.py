@@ -177,7 +177,7 @@ class simba:
    
 
     def calc_mags(self,wl,lum,z,filt_wl=[845,846,850,854,855],
-                  filt_trans=[0.,1.,1.,1.,0.]):
+                  filt_trans=[0.,1.,1.,1.,0.],lambda_pivot=850):
         """
         
         Args:
@@ -191,7 +191,6 @@ class simba:
         dl = dl.to(u.cm)
 
         wl *= (1.+z)  # shift by redshift
-
         # nu = constants.c.cgs/(wl.to(u.cm))
         # nu = nu.to(u.Hz)
 
@@ -199,12 +198,14 @@ class simba:
         lum /= wl.to(u.AA) # erg s^-1 AA^-1
 
         flux = lum / (4.*np.pi*dl**2.) # erg s^-1 cm^-2 AA^-1
+        # flux *= (1+z)
 
         # filt_nu = (2.99792458e8 * u.m / u.s) / filt_wl
-        pivot_wl = 850 * u.micron
+        pivot_wl = lambda_pivot * u.micron
         pivot_nu = constants.c / pivot_wl
 
-        tophat = UnitFilter(filt_wl, filt_trans, name='tophat', dtype='energy', unit='micron')
+        #tophat = UnitFilter(filt_wl, filt_trans, name='tophat', dtype='energy', unit='micron')
+        tophat = UnitFilter(filt_wl, filt_trans, name='tophat', dtype='energy', unit='angstrom')
         flux_tophat = tophat.get_flux(wl.to(u.AA), flux)# flux_unit='fnu',
 
         # flam to fnu (erg s^-1 cm^-2 Hz^-1)
