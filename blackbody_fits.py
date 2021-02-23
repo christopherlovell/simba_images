@@ -103,6 +103,8 @@ Lbins = np.linspace(11,13.8,55)
 fig, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2,4,figsize=(12,6))
 plt.subplots_adjust(hspace=0.3, wspace=0.1)
 
+_percsT = {}
+_percsL = {}
 for i,(_g,axA,axB) in enumerate(zip(galaxies, 
                                 [ax1,ax1,ax2,ax2,ax3,ax3,ax4,ax4],
                                 [ax5,ax5,ax6,ax6,ax7,ax7,ax8,ax8])):
@@ -114,13 +116,19 @@ for i,(_g,axA,axB) in enumerate(zip(galaxies,
 
     axB.hist(np.log10(Lsol[_g.GroupID]), bins=Lbins, alpha=0.5, color='C%i'%i)
     
-    _percsT = np.percentile(Tmbb[_g.GroupID], q=[16,50,84])
+    _percsT[_g.GroupID] = np.percentile(Tmbb[_g.GroupID], q=[16,50,84])
 
-    _percsL = np.percentile(np.log10(Lsol[_g.GroupID]), q=[16,50,84])
+    _percsL[_g.GroupID] = np.percentile(np.log10(Lsol[_g.GroupID]), q=[16,50,84])
     print('$%.2f_{-%.2f}^{+%.2f}$ & $%.2f_{-%.2f}^{+%.2f}$'%\
-            (_percsT[1],_percsT[1] - _percsT[0],_percsT[2] - _percsT[1],
-             _percsL[1],_percsL[1] - _percsL[0],_percsL[2] - _percsL[1]))
-    
+            (_percsT[_g.GroupID][1], _percsT[_g.GroupID][1] - _percsT[_g.GroupID][0], 
+             _percsT[_g.GroupID][2] - _percsT[_g.GroupID][1],
+             _percsL[_g.GroupID][1], _percsL[_g.GroupID][1] - _percsL[_g.GroupID][0], 
+             _percsL[_g.GroupID][2] - _percsL[_g.GroupID][1]))
+   
+
+## inter-percentile range
+print(np.median([_percsT[_g.GroupID][2] - _percsT[_g.GroupID][0] for _g in galaxies]))
+print(np.median([_percsL[_g.GroupID][2] - _percsL[_g.GroupID][0] for _g in galaxies]))
     
 for ax in [ax1,ax2,ax3,ax4]: 
     ax.set_xlim(41,69)
