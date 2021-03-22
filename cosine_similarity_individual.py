@@ -9,6 +9,7 @@ import h5py
 import matplotlib as mpl 
 import matplotlib.pyplot as plt 
 import matplotlib.cm as cm
+from matplotlib.ticker import ScalarFormatter, MultipleLocator
 
 from scipy.spatial.distance import cosine
 
@@ -100,7 +101,7 @@ if True:
     fig,(ax2,ax3) = plt.subplots(2,1,figsize=(5,8))
     plt.subplots_adjust(hspace=0.25)
 
-    [ax2.plot(np.log10(wav * (1+z)), s, alpha=1,
+    [ax2.plot(wav * (1+z), s, alpha=1,
             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
 
     mean_spec = np.mean(spec,axis=0)
@@ -109,19 +110,30 @@ if True:
 
 
     ax2.set_ylim(0,)
-    ax2.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=13)
+    #ax2.set_xlabel('$\mathrm{log_{10}}(\lambda \,/\, \AA)$', size=13)
     ax2.set_ylabel('$S \,/\, \mathrm{mJy}$', size=13)
     
+    ax3.set_ylabel('$S_i \,/\, \mathrm{ \left< S \\right>}$',size=13)
+    ax3.set_ylim(0.3,1.7)
+    
     for ax in [ax2,ax3]:
-        ax.set_xlim(2,3)
-
+        ax.set_xlim(60,1000)
+        ax.set_xlabel('$\lambda \,/\, \mathrm{\mu m}$',size=12)
+        ax.set_xscale('log')
+        formatter = ScalarFormatter()
+        formatter.set_scientific(False)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.xaxis.set_minor_formatter(formatter)
+        ax.xaxis.set_major_locator(MultipleLocator(100))
+        ax.set_xticks([60,70,80,90,100,200,300,400,500,600,700,800,900,1000])
+        ax.set_xticklabels(['60','','','','100','200','','400','','','700','','','1000'])
+    
+    ax3.hlines(1, 60,1000, linestyle='dashed', color='black')
     # mean_flux = np.round(np.mean(flux_850),2)
     # ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
     # ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
-    ax3.set_xlabel('$\lambda \,/\, \AA$',size=13)
-    ax3.set_ylabel('$S_i \,/\, \mathrm{ \left< S \\right>}$',size=13)
-    ax3.set_ylim(0.7,1.3)
-    ax3.set_xlim(250,1000)
+    # ax3.set_xlabel('$\lambda \,/\, \AA$',size=13)
+    #ax3.set_xlim(250,1000)
 
     cax = fig.add_axes([0.68, 0.7, 0.04, 0.15])
     cbar = fig.colorbar(m, aspect=10, orientation='vertical',

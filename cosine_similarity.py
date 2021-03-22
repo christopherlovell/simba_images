@@ -92,7 +92,7 @@ for i,gidx in enumerate(gindexes):
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
     
-    S350[gidx] = spec[:,np.argmin(np.abs((wav*(1+z))-350))]
+    S350[gidx] = spec[:,np.argmin(np.abs((wav*(1+z))-250))]
 
 
 fig,ax = plt.subplots(1,1)
@@ -101,19 +101,33 @@ galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
                 94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
 
 
-for i,gidx in zip([0,2,4,7],[3,51,94,139]):
-    print(i,gidx)
-    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
-               color='C%i'%i, label=galaxy_names[gidx])
+for i,gidx,_alpha in zip([0,2,4,7,1,3,5,6],
+                         [3,51,94,139,8,54,100,134],
+                         [1,1,1,1,0.3,0.3,0.3,0.3]):
 
-for i,gidx in zip([1,3,5,6],[8,54,100,134]):
     print(i,gidx)
-    ax.scatter(S350[gidx] / S350[gidx].min(), np.abs(cos_dist[gidx]),
-               color='C%i'%i, alpha=0.3, label=galaxy_names[gidx])
+    ax.scatter(S350[gidx] / S350[gidx].max(), np.abs(cos_dist[gidx]),
+               color='C%i'%i, label=galaxy_names[gidx],alpha=_alpha)
 
+    if i in [0,2,4,7]:
+        binlimits = np.linspace(0,1,20)
+        _Cbin = np.array([binned_statistic(S350[gidx] / S350[gidx].max(), np.abs(cos_dist[gidx]),
+                                          statistic=lambda y: np.percentile(y, p), bins=binlimits)[0] \
+                                          for p in [16,50,84]]).T
+    
+        plt.plot(binlimits[1:] - np.diff(binlimits)[0]/2, _Cbin[:,1], color='C%i'%i)
+    #plt.fill_between(bins[1:], _Cbin[:,0], _Cbin[:,2], alpha=0.4)
+
+
+# for i,gidx in zip([1,3,5,6],):
+#     print(i,gidx)
+#     ax.scatter(S350[gidx] / S350[gidx].max(), np.abs(cos_dist[gidx]),
+#                color='C%i'%i, alpha=0.3, label=galaxy_names[gidx])
+
+ax.set_xlim(None,1)
 ax.set_ylim(0,1)
 ax.set_ylabel('$C_i$', size=14)
-ax.set_xlabel('$S_{350,i} \,/\, S_{350,\mathrm{min}}$', size=14)
+ax.set_xlabel('$S_{250,i} \,/\, S_{250,\mathrm{max}}$', size=14)
 ax.legend()
 # plt.show()
 plt.savefig('plots/cosine_similarity.png',dpi=300,bbox_inches='tight')

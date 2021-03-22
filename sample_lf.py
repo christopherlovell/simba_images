@@ -2,61 +2,49 @@ import numpy as np
 from scipy.integrate import quad
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import MultipleLocator
+
+from simba import Schechter
 
 
+def calc_phi(S,volume,binlimits=None):
+    if binlimits is None:
+        _n,binlims = np.histogram(S)
+    else:
+        _n,binlims = np.histogram(S,bins=binlimits)
 
-class Schechter():
-    
-    def __init__(self, Dstar=1e-2, alpha=-1.4, log10phistar=4):
-        self.sp = {}
-        self.sp['D*'] = Dstar
-        self.sp['alpha'] = alpha
-        self.sp['log10phistar'] = log10phistar
-
-
-    def _integ(self, x,a,D):
-        return 10**((a+1)*(x-D)) * np.exp(-10**(x-D))
-
-
-    def binPhi(self, D1, D2):
-        args = (self.sp['alpha'],self.sp['D*'])
-        gamma = quad(self._integ, D1, D2, args=args)[0]
-        return gamma * 10**self.sp['log10phistar'] * np.log(10)
-
-
-    def _CDF(self, D_lowlim, normed = True, inf_lim=30):
-        log10Ls = np.arange(self.sp['D*']+5.,D_lowlim-0.01,-0.01)
-        CDF = np.array([self.binPhi(log10L,inf_lim) for log10L in log10Ls])
-        if normed: CDF /= CDF[-1]
-    
-        return log10Ls, CDF
-
-
-    def sample(self, volume, D_lowlim, inf_lim=100):
-        D, cdf = self._CDF(D_lowlim, normed=False, inf_lim=inf_lim)
-        n2 = self.binPhi(D_lowlim, inf_lim)*volume
-    
-        # --- Not strictly correct but I can't think of a better approach
-        n = np.random.poisson(volume * cdf[-1])
-        ncdf = cdf/cdf[-1]
-        D_sample = np.interp(np.random.random(n), ncdf, D)
-    
-        return D_sample
-
-
-def calc_phi(S,volume):
-    _n,binlims = np.histogram(S)
     bins = binlims[:-1] + (binlims[1:] - binlims[:-1])/2
-    return (_n/volume)/(binlims[1] - binlims[0]), bins
+    _y = (_n/volume)/(binlims[1] - binlims[0])
+    return _y, bins
 
-V = 2e2
+
+
+V = 50
 a = 9.58
-model = Schechter(Dstar=np.log10(3.7), alpha=-1.4, log10phistar=3)
-S = 10**model.sample(volume=V, D_lowlim=-1, inf_lim=3)
+model = Schechter(Dstar=1.50, alpha=-1.91, log10phistar=3.56)  # 250 mu-metre
+# model = Schechter(Dstar=1.46, alpha=-2.31, log10phistar=3.17)  # 350 mu-metre
 
-# _phi,bins = calc_phi(np.log10(S),V)
-# plt.plot(bins, np.log10(_phi))
+S = 10**model.sample(volume=V, D_lowlim=0, inf_lim=3)
 
+_a = 9.579 # change for wavelength
+orientation = 1 - inv_cdf(np.random.rand(len(S)), A=_a)
+new_S = S * (1 - orientation)
+
+binlimits = np.linspace(0,2.3,40)
+db = (binlimits[1] - binlimits[0])
+bins = binlimits[:-1] + db/2 
+_phi = np.log10([model.binPhi(b1,b2)/(b2-b1) for b1,b2 in \
+                 zip(binlimits[:-1],binlimits[1:])])
+plt.plot(bins, _phi, label='model')
+
+
+_phi,bins = calc_phi(np.log10(S),V,binlimits)
+plt.plot(bins, np.log10(_phi), label='binned')
+
+plt.legend()
+plt.show()
 
 
 def inv_cdf(x, A=43.455):
@@ -93,9 +81,187 @@ def inv_cdf(x, A=43.455):
 # 
 # print('percentage reduction in edge-on galaxies in selection:%.4f'%(1 - _p1 / _p2))
 
+## ---- plot orientation distribution
+Ns = 5
+Slim_array = np.array([4,8,16,32,64])  
+# np.array([5e-1,1,2,4,8]) # np.logspace(-0.3,1.0,Ns)
+binlimits = np.linspace(0,0.5,11)
+bins = binlimits[1:] - ((binlimits[1] - binlimits[0])/2)
+
+cmap = plt.cm.get_cmap('Spectral', len(Slim_array))
+sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=Slim_array.min(), vmax=Slim_array.max()))
+sm.set_clim(0,Ns)
+
+fig, ax = plt.subplots(1,1,figsize=(6,5))
+
+for i, slim in enumerate(Slim_array):
+    _N = list(np.histogram(orientation[S > slim], bins=binlimits)[0])
+    _NB = list(np.histogram(orientation[new_S > slim], bins=binlimits)[0])
+
+    _N.append(_N[-1])
+    _NB.append(_NB[-1])
+
+    ax.step(binlimits, np.array(_NB) / np.array(_N), color=cmap(i/Ns), where='post')
+
+
+ax.set_xlim(0,0.5)
+ax.set_ylim(0,1)
+ax.set_xlabel('$D$ [Dimming]')
+ax.set_ylabel('$N_{\mathrm{dim}} \,/\, N$')
+ax.text(0.1,0.1,'$\lambda = 250 \, \mathrm{\mu m}$',transform=ax.transAxes)
+ax.grid(alpha=0.2)
+cbar = fig.colorbar(sm)
+cbar.set_ticks(np.arange(Ns)+0.5)
+cbar.set_ticklabels(Slim_array)
+cbar.set_label('$S_{\mathrm{lim}}$')
+plt.show()
+# fname = 'plots/dimming_fraction.png'; print(fname)
+# plt.savefig(fname, dpi=300, bbox_inches='tight')
+
+
+## ---- plot luminosity function with completeness (350 mu-metre)
+fig, ax = plt.subplots(1,1, figsize=(6,5))
+
+cmap = plt.cm.get_cmap('viridis')
+sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0,1))#LogNorm(vmin=1e-2, vmax=1))
+
+binlimits = np.linspace(-0.3,2.3,180)
+#binlimits = np.hstack([binlimits,np.linspace(1.8,2.3,20)])
+
+_phi,bins = calc_phi(np.log10(new_S), V, binlimits=binlimits)
+ax.plot(10**bins, np.log10(_phi), label='un-dimmed', color='black', linestyle='dashed')
+
+_phi,bins = calc_phi(np.log10(S), V, binlimits=binlimits)
+ax.plot(10**bins, np.log10(_phi), label='un-dimmed', color='red', linestyle='dashed')
+
+ax.set_xscale('log')
+
+slim = binlimits[95] # [80]
+_N = np.histogram(np.log10(S[new_S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+_NT = np.histogram(np.log10(S[S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+
+for _c,_bl in zip(_N/_NT,binlimits[binlimits>=slim]):
+    _x = np.linspace(_bl,_bl+np.diff(binlimits)[0],2)
+    _bins = _x[1:] - ((_x[1] - _x[0])/2)
+    _y = np.log10(calc_phi(np.log10(new_S),V,binlimits=_x)[0])
+    ax.fill_between(10**_x, np.hstack([_y,_y]), y2=-1, color=cmap(_c))
+
+y_upp = 4.3 #4.6 # 4.3
+ax.set_ylim(3,y_upp) # (1,y_upp)
+ax.set_xlim(8,80) # (5,90) # (8,80)
+
+_x_completeness = 10**binlimits[binlimits>=slim][np.min(np.where((_N/_NT) > 0.95))]
+ax.text(_x_completeness*1.05, y_upp*0.91, '$S_{95} = %.2f \, \mathrm{mJy}$'%(_x_completeness))
+ax.vlines(_x_completeness, -1, y_upp*0.94, linestyle='dotted', color='black')
+ax.text(10**slim * 1.05, y_upp * 0.96, '$S_{\mathrm{lim}} = %.2f \, \mathrm{mJy}$'%10**slim)
+ax.vlines(10**slim, -1, y_upp, linestyle='-.', color='black')
+
+cbar = fig.colorbar(sm)
+cbar.set_label('Completeness')
+
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+ax.xaxis.set_major_formatter(formatter)
+ax.xaxis.set_minor_formatter(formatter)
+
+ax.set_xlabel('$\mathrm{log_{10}}(S \,/\, \mathrm{mJy})$')
+ax.set_ylabel('$\phi \,/\, (\mathrm{deg^{-2} \; dex^{-1}})$')
+
+plt.show()
+# fname = 'plots/lf_completeness_350.png'; print(fname)
+# fname = 'plots/lf_completeness.png'; print(fname)
+# plt.savefig(fname, dpi=300, bbox_inches='tight')
+
+
+# ## ---- plot luminosity function with completeness
+# fig, ax = plt.subplots(1,1, figsize=(6,5))
+# 
+# cmap = plt.cm.get_cmap('viridis')
+# sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0,1))#LogNorm(vmin=1e-2, vmax=1))
+# 
+# binlimits = np.linspace(-0.3,2.3,79)
+# _phi,bins = calc_phi(np.log10(S),V,binlimits=binlimits)
+# ax.plot(10**bins, np.log10(_phi), label='un-dimmed', color='black', linestyle='dashed')
+# 
+# ax.set_xscale('log')
+# 
+# slim = binlimits[44]
+# _N = np.histogram(np.log10(S[new_S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+# _NT = np.histogram(np.log10(S[S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+# 
+# for _c,_bl in zip(_N/_NT,binlimits[binlimits>=slim]):
+#     _x = np.linspace(_bl,_bl+np.diff(binlimits)[0],10)
+#     _bins = _x[1:] - ((_x[1] - _x[0])/2)
+#     ax.fill_between(10**_bins, np.log10(calc_phi(np.log10(S),V,binlimits=_x)[0]), 
+#                     y2=-1, color=cmap(_c))
+# 
+# y_upp = 4.3
+# ax.set_ylim(3,y_upp)
+# ax.set_xlim(8,80)
+# 
+# _x_completeness = 10**binlimits[binlimits>=slim][np.min(np.where((_N/_NT) > 0.95))]
+# ax.text(_x_completeness*1.05, y_upp*0.96, '$S_{95} = %.2f \, \mathrm{mJy}$'%(_x_completeness))
+# ax.vlines(_x_completeness, -1, y_upp*0.97, linestyle='dotted', color='black')
+# ax.text(10**slim * 1.05, y_upp * 0.99, '$S_{\mathrm{lim}} = %.2f \, \mathrm{mJy}$'%10**slim)
+# ax.vlines(10**slim, -1, y_upp, linestyle='-.', color='black')
+# 
+# cbar = fig.colorbar(sm)
+# cbar.set_label('Completeness')
+# 
+# formatter = ScalarFormatter()
+# formatter.set_scientific(False)
+# ax.xaxis.set_major_formatter(formatter)
+# ax.xaxis.set_minor_formatter(formatter)
+# 
+# ax.set_xlabel('$\mathrm{log_{10}}(S \,/\, \mathrm{mJy})$')
+# ax.set_ylabel('$\phi \,/\, (\mathrm{deg^{-2} \; dex^{-1}})$')
+# 
+# plt.show()
+# # fname = 'plots/lf_completeness.png'; print(fname)
+# # plt.savefig(fname, dpi=300, bbox_inches='tight')
+
+
+
+## ---- completeness as a function of flux density limit
+fig, ax = plt.subplots(1,1,figsize=(6,5))
+
+Slim_array = np.linspace(0.3,2.0,20)
+binlimits = np.linspace(0.3,2.3,79)
+
+wavelengths = [250,350,500,850]
+a_array = [9.579,17.24,26.12,42.37]
+
+for _a,label in zip(a_array,wavelengths):
+    orientation = 1 - inv_cdf(np.random.rand(len(S)), A=_a)
+    new_S = S * (1 - orientation)
+
+    completeness = np.zeros(len(Slim_array))
+    for i,slim in enumerate(Slim_array):
+        _N = np.histogram(np.log10(S[new_S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+        _NT = np.histogram(np.log10(S[S > 10**slim]), bins=binlimits[binlimits>=slim])[0]
+        if len(_N) > 0:
+            completeness[i] = binlimits[binlimits>=slim][np.min(np.where((_N/_NT) > 0.99))]
+        
+    ax.plot(Slim_array, completeness, label='$\lambda = %s \; \mathrm{\mu m}$'%label)
+
+
+ax.plot(Slim_array, Slim_array, linestyle='dashed', color='black')
+ax.set_xlabel('$\mathrm{log_{10}}(S_{\mathrm{lim}})$')
+ax.set_ylabel('$\mathrm{log_{10}}(S_{99})$')
+ax.set_xlim(Slim_array.min(), Slim_array.max())
+ax.set_ylim(Slim_array.min(), Slim_array.max() + 0.3)
+ax.grid(alpha=0.2)
+ax.legend()
+
+plt.show() 
+# fname = 'plots/slim_completeness.png'; print(fname)
+# plt.savefig(fname, dpi=300, bbox_inches='tight')
+
+
+
 
 ## ---- plot $b$ as a function of Slim
-Slim_array = np.logspace(-0.3,1.0,20)
+Slim_array = np.logspace(0.3,2.0,20)
 a_array = [9.579,17.24,26.12,42.37]
 wavelengths = [250,350,500,850]
 
@@ -106,7 +272,7 @@ fig, ax = plt.subplots(1,1,figsize=(5,4))
 for _a,label,c in zip(a_array,wavelengths, colors):
     orientation = inv_cdf(np.random.rand(len(S)), A=_a)
     new_S = S * orientation
-    edge_on = orientation < np.quantile(orientation,0.1)
+    edge_on = orientation < np.quantile(orientation,0.2)
 
     _out = np.zeros(len(Slim_array))
     for i, slim in enumerate(Slim_array):

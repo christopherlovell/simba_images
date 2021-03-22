@@ -77,19 +77,19 @@ colors = [plt.cm.Set2(i) for i in range(len(a_array))]
 ax.hlines(0,0.,1.1, linestyle='dashed', color='black')
 
 for i,(_a,_N,label,c) in enumerate(zip(a_array,N_array,wavelengths,colors)):
-    ax.plot(x,np.log10(np.exp((_a[0]*x - 1))/_a[1]), c=c, 
+    ax.plot(1 - x,np.log10(np.exp((_a[0]*x - 1))/_a[1]), c=c, 
             label='$\lambda = %s \, \mathrm{\mu m}$ | $a = %.2f$'%(label,_a[0]), linestyle='dashed')
 
     _y = np.log10(_N)
     _y[np.where(_y == -np.inf)[0].max()] = 0.
-    ax.step(binlims[1:], _y, where='pre', c=c)
+    ax.step(1 - binlims[1:], _y, where='pre', c=c)
 
 
 ax.legend(frameon=False)
 # ax.text(0.05,0.9,'$a = %.2f$'%popt[0], transform=ax.transAxes, size=10)
-ax.set_xlim(0.5,1.0)
+ax.set_xlim(0.,0.5)
 ax.set_ylim(-0.1,2.8)
-ax.set_xlabel('$S_{i} \,/\, S_{i}^{\mathrm{max}}$')
+ax.set_xlabel('$D$') # S_{i} \,/\, S_{i}^{\mathrm{max}}$')
 ax.set_ylabel('$\mathrm{log_{10}(Normalised \; frequency)}$')
 plt.show()
 # fname = 'plots/dimming_distribution.png'; print(fname)

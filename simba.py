@@ -1,6 +1,8 @@
 import glob
 import numpy as np
 from scipy.spatial.distance import cdist
+from scipy.integrate import quad
+
 import caesar
 
 from hyperion.model import ModelOutput
@@ -261,5 +263,55 @@ class simba:
             with h5py.File('%s/%s.h5'%(out_dir, gal_id), 'w') as h5_out: 
                 for k in h5_in[gal_id].keys(): 
                     f.copy('%s/%s'%(gal_id, k), h5_out) 
-        
-        
+
+
+    def calc_phi(self,S,volume,binlimits=None):
+        if binlimits is None:
+            _n,binlims = np.histogram(S)
+        else:
+            _n,binlims = np.histogram(S,bins=binlimits)
+    
+        bins = binlims[:-1] + (binlims[1:] - binlims[:-1])/2
+        return (_n/volume)/(binlims[1] - binlims[0]), bins
+ 
+   
+
+class Schechter():
+
+    def __init__(self, Dstar=1e-2, alpha=-1.4, log10phistar=4):
+        self.sp = {}
+        self.sp['D*'] = Dstar
+        self.sp['alpha'] = alpha
+        self.sp['log10phistar'] = log10phistar
+
+
+    def _integ(self, x,a,D):
+        return 10**((a+1)*(x-D)) * np.exp(-10**(x-D))
+
+
+    def binPhi(self, D1, D2):
+        args = (self.sp['alpha'],self.sp['D*'])
+        gamma = quad(self._integ, D1, D2, args=args)[0]
+        return gamma * 10**self.sp['log10phistar'] * np.log(10)
+
+
+    def _CDF(self, D_lowlim, normed = True, inf_lim=30):
+        log10Ls = np.arange(self.sp['D*']+5.,D_lowlim-0.01,-0.01)
+        CDF = np.array([self.binPhi(log10L,inf_lim) for log10L in log10Ls])
+        if normed: CDF /= CDF[-1]
+
+        return log10Ls, CDF
+
+
+    def sample(self, volume, D_lowlim, inf_lim=100):
+        D, cdf = self._CDF(D_lowlim, normed=False, inf_lim=inf_lim)
+        # n2 = self.binPhi(D_lowlim, inf_lim)*volume
+
+        # --- Not strictly correct but I can't think of a better approach
+        n = np.random.poisson(volume * cdf[-1])
+        ncdf = cdf/cdf[-1]
+        D_sample = np.interp(np.random.random(n), ncdf, D)
+
+        return D_sample
+
+

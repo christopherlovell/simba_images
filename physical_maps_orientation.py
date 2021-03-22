@@ -12,7 +12,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import ScalarFormatter, MultipleLocator
 
 import sphviewer as sph
 from sphviewer.tools import cmaps
@@ -186,9 +186,9 @@ cbar.ax.set_ylabel('$\mathrm{M_{\odot} \; kpc^{-2}}$', size=12)
 axes[3,0].set_ylabel('$\mathrm{mJy}$',size=12)
 
 
-from matplotlib.ticker import MultipleLocator
+
 for ax in axes[-1,:]:
-    ax.set_xlabel('$\mathrm{log_{10}(\lambda \,/\, \mu m)}$',size=12)
+    ax.set_xlabel('$\lambda \,/\, \mathrm{\mu m}$',size=12)
     ax.set_xscale('log')
     formatter = ScalarFormatter()
     formatter.set_scientific(False)

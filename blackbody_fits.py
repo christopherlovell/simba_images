@@ -4,6 +4,7 @@ sys.path.append('..')
 import numpy as np 
 import json 
 import h5py
+import glob
 
 from astropy import constants 
 import astropy.units as u
@@ -11,6 +12,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 from hyperion.model import ModelOutput
+import yt
 
 import caesar 
 from caesar.data_manager import DataManager
@@ -33,8 +35,6 @@ def mbb(x,z,F,T,beta):
 
 
 snap = '078'
-rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run'
-#rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run_sed'
 
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
@@ -52,6 +52,8 @@ Lsol = {}
 dl = sb.cosmo.luminosity_distance(z).to(u.cm)
 x = np.logspace(-1,4,int(1e3))
 _nu = (constants.c / (x * u.micron)).to(u.Hz)
+
+fig, ax = plt.subplots(1,1)
 
 for _g in galaxies:
     gidx = _g.GroupID
@@ -78,24 +80,31 @@ for _g in galaxies:
     Lsol[gidx] = np.zeros(spec.shape[0])
 
     for i in np.arange(spec.shape[0]):
-        y = np.array([# f50[i].value, f80[i].value, f100[i].value, 
+        _y = np.array([# f50[i].value, f80[i].value, f100[i].value, 
                       f250[i].value, f350[i].value, f500[i].value, f850[i].value])  # mJy
         
         wl = np.array([#50, 80, 100, 
-                       250,350,500,850])
+                       250,350,500,850]) 
 
         _beta = 2
-        popt, pcov = curve_fit(lambda x, F, T: mbb(x,z,F,T,_beta), wl, y, p0=[1e4,40])
+        popt, pcov = curve_fit(lambda x, F, T: mbb(x,z,F,T,_beta), wl, _y, p0=[1e4,40])
         Tmbb[gidx][i] = popt[1]
-
-        y = mbb(x,z,popt[0],popt[1],beta=_beta) * u.mJy
+        
+        y = mbb(x,z,popt[0],popt[1],beta=_beta) * u.mJy    
         y = y.to(u.erg  / (u.s * u.cm**2 * u.Hz))
         _out = np.trapz(y[::-1],_nu[::-1]) * (4 * np.pi * dl**2)
         Lsol[gidx][i] = _out.to(u.solLum).value
-        
 
-        
+#         if i == 0:
+#             ax.scatter(wl,_y,marker='o')
+#             x = np.logspace(-1,4,int(1e3))
+#             ax.plot(x, mbb(x,z,popt[0],popt[1],beta=_beta))
+# 
+# 
+# plt.show()        
 
+
+run = '/blue/narayanan/c.lovell/simba/m100n1024/run_sed/snap_078_hires_orthogonal'
 
 Tbins = np.linspace(32,80,35)
 Lbins = np.linspace(11,13.8,55)
@@ -112,7 +121,14 @@ for i,(_g,axA,axB) in enumerate(zip(galaxies,
     axA.hist(Tmbb[_g.GroupID], bins=Tbins, alpha=0.5, color='C%i'%i, 
              label=galaxy_names[_g.GroupID])
 
+    ## plot true mass-weighted temperature
+    fname = glob.glob('%s/gal_%i/snap078.galaxy*.rtout.sed'%(run,_g.GroupID))[0]
 
+    m = ModelOutput(fname)
+    _pf = m.get_quantities().to_yt()
+    ad = _pf.all_data()
+    _T = ad.quantities.weighted_average_quantity("temperature", "cell_mass")
+    axA.vlines(_T,0,25, linestyle='dashed', color='C%i'%i)
 
     axB.hist(np.log10(Lsol[_g.GroupID]), bins=Lbins, alpha=0.5, color='C%i'%i)
     
@@ -145,8 +161,8 @@ for ax in [ax1,ax5]: ax.set_ylabel('$N$')
 for ax in [ax2,ax3,ax4]: ax.set_yticklabels([])
 for ax in [ax6,ax7,ax8]: ax.set_yticklabels([])
 
-# plt.show()
-plt.savefig('plots/temp_lum_distribution.png', dpi=300, bbox_inches='tight') 
+plt.show()
+# plt.savefig('plots/temp_lum_distribution.png', dpi=300, bbox_inches='tight') 
 
 
 
@@ -173,4 +189,44 @@ plt.savefig('plots/temp_lum_distribution.png', dpi=300, bbox_inches='tight')
 # plt.ylim(-1,4)
 # plt.show()
 
+
+
+
+for i,_g in enumerate(galaxies):
+    gidx = _g.GroupID
+    plt.errorbar(_g.sfr, np.median(Lsol[gidx]), yerr=np.std(Lsol[gidx]) ,
+                color='C%i'%i, label=galaxy_names[gidx], marker='o')
+
+
+plt.legend(loc='lower center')
+plt.xlabel('SFR / Msol yr^-1')
+plt.ylabel('L_IR / Lsol')
+plt.show()
+
+
+## ---- dust temp against luminosity
+fig, ax = plt.subplots(1,1)
+
+for i,_g in enumerate(galaxies):
+    gidx = _g.GroupID
+    ax.scatter(np.log10(Lsol[gidx]), Tmbb[gidx],# yerr=np.std(Lsol[gidx]) ,
+                color='C%i'%i, label=galaxy_names[gidx], s=5)
+
+    fname = glob.glob('%s/gal_%i/snap078.galaxy*.rtout.sed'%(run,_g.GroupID))[0]
+
+    m = ModelOutput(fname)
+    _pf = m.get_quantities().to_yt()
+    ad = _pf.all_data()
+    _T = ad.quantities.weighted_average_quantity("temperature", "cell_mass")
+    ax.scatter(np.log10(np.median(Lsol[gidx])),_T, color='C%i'%i,
+               marker='o', edgecolors='black', s=20, lw=1)
+
+
+plt.legend(ncol=1)#loc='lower center')
+ax.set_xlabel('$L_{\mathrm{IR}} \,/\, \mathrm{L_{\odot}}$')
+ax.set_ylabel('$T_{\mathrm{MBB}}$')
+ax.set_ylim(43,68)
+ax.set_xlim(12.45,13.06)
+# plt.show()
+plt.savefig('plots/temp_lum_scatter.png', dpi=300, bbox_inches='tight') 
 
