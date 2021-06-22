@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from scipy.spatial.distance import cosine
+from scipy.stats import binned_statistic
 
 from hyperion.model import ModelOutput
 
@@ -88,7 +89,7 @@ for i,gidx in enumerate(gindexes):
     cos_dist[gidx] = [round(1 - cosine(_c,_L),3) for _c in coods] 
 
     gidx = galaxies[i].GroupID
-    with h5py.File('sed_out_hires.h5','r') as f:
+    with h5py.File('sed_out_hires_test.h5','r') as f:
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
     
@@ -101,13 +102,14 @@ galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
                 94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
 
 
-for i,gidx,_alpha in zip([0,2,4,7,1,3,5,6],
+for i,gidx,_alpha,_marker in zip([0,2,4,7,1,3,5,6],
                          [3,51,94,139,8,54,100,134],
-                         [1,1,1,1,0.3,0.3,0.3,0.3]):
+                         [1,1,1,1,0.3,0.3,0.3,0.3],
+                         ['o','o','o','o','*','*','*','*']):
 
     print(i,gidx)
     ax.scatter(S350[gidx] / S350[gidx].max(), np.abs(cos_dist[gidx]),
-               color='C%i'%i, label=galaxy_names[gidx],alpha=_alpha)
+               color='C%i'%i, label=galaxy_names[gidx],alpha=1.0,marker=_marker)#_alpha)
 
     if i in [0,2,4,7]:
         binlimits = np.linspace(0,1,20)
@@ -128,7 +130,7 @@ ax.set_xlim(None,1)
 ax.set_ylim(0,1)
 ax.set_ylabel('$C_i$', size=14)
 ax.set_xlabel('$S_{250,i} \,/\, S_{250,\mathrm{max}}$', size=14)
-ax.legend()
+ax.legend(ncol=2,title='Clear Disc:             No Disc:')
 # plt.show()
-plt.savefig('plots/cosine_similarity.png',dpi=300,bbox_inches='tight')
+plt.savefig('plots/cosine_similarity.pdf',dpi=300,bbox_inches='tight'); plt.close()
 

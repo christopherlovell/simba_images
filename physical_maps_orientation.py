@@ -77,8 +77,8 @@ plt.subplots_adjust(wspace=0.05, hspace=0.05)
 galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
                 94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
 
-for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
-# for k,gidx in enumerate(['94','100','134','139']):
+# for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
+for k,gidx in enumerate(['94','100','134','139']):
     print("gidx:",gidx)
     hcood =  np.array(_dat[snap][gidx]['pos'])
     hidx =  _dat[snap][gidx]['hidx']
@@ -148,7 +148,7 @@ for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
 
     ## ---- plot SEDs
     # gidx = galaxies[k].GroupID
-    with h5py.File('sed_out_hires.h5','r') as f:
+    with h5py.File('sed_out_hires_test.h5','r') as f:
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
         f850 = sb.calc_mags(wav*u.micron,spec*u.erg/u.s,redshift)
@@ -156,6 +156,11 @@ for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
 
 
     [axes[3,k].plot((wav*(1+redshift)), s, color='black',alpha=0.2) for s in spec]
+    # [axes[3,k].plot((wav), s, color='black',alpha=0.2) for s in spec]
+    
+    _wav_peak = wav[np.argmax(spec,axis=1)] * (1+redshift)
+    axes[3,k].fill_betweenx([0,120],np.repeat(_wav_peak.min(),2),
+                            np.repeat(_wav_peak.max(),2),alpha=0.3,color='grey')
     
     ## ---- plot orthogonal SEDs
     with h5py.File('sed_out_orthogonal.h5','r') as f:
@@ -170,7 +175,7 @@ for k,gidx in enumerate(['3','8','51','54']):#,'94','100','134','139']):
         axes[axidx,k].add_artist(circle)
 
     axes[3,k].set_xlim(1e2,1e3)
-    axes[3,k].set_ylim(0,93)
+    axes[3,k].set_ylim(0,109)
     axes[3,k].grid(alpha=0.1)
     axes[3,k].text(0.95, 0.9, '$S_{850}=%.2f \; \mathrm{mJy}$'%np.median(f850).value, 
                    ha='right', transform=axes[3,k].transAxes)
@@ -188,7 +193,7 @@ axes[3,0].set_ylabel('$\mathrm{mJy}$',size=12)
 
 
 for ax in axes[-1,:]:
-    ax.set_xlabel('$\lambda \,/\, \mathrm{\mu m}$',size=12)
+    ax.set_xlabel('$\lambda_{\mathrm{obs}} \,/\, \mathrm{\mu m}$',size=12)
     ax.set_xscale('log')
     formatter = ScalarFormatter()
     formatter.set_scientific(False)
@@ -216,7 +221,8 @@ for ax in axes[:,1:].flatten():
 
 
 # plt.show() 
-plt.savefig('plots/dust_maps.png', dpi=300, bbox_inches='tight')
-plt.close()
+# plt.savefig('plots/dust_maps.pdf', dpi=300, bbox_inches='tight'); plt.close()
+plt.savefig('plots/dust_maps_B.pdf', dpi=300, bbox_inches='tight'); plt.close()
+
 
 

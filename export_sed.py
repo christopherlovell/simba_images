@@ -27,6 +27,7 @@ for gidx in [3,8,51,54,94,100,134,139]:
     # wav,spec = m.get_sed(inclination='all',aperture=-1)
     
     with h5py.File('sed_out_orthogonal.h5','a') as f:
+    # with h5py.File('sed_out_hires_test.h5','a') as f:
         f.require_group(str(gidx))
         dset = f.create_dataset('%s/Wavelength'%gidx, data=wav)
         dset.attrs['Units'] = 'microns'

@@ -92,15 +92,15 @@ if True:
     _L = recalculate_ang_mom_vector(_g,ptype=0)
     cos_dist = [round(1 - cosine(_c,_L),3) for _c in coods] 
 
-    with h5py.File('sed_out_hires.h5','r') as f:
+    with h5py.File('sed_out_hires_test.h5','r') as f:
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
         spec = sb.luminosity_to_flux_density(wav,spec,z)
     
     
-    fig,(ax2,ax3) = plt.subplots(2,1,figsize=(5,8))
-    plt.subplots_adjust(hspace=0.25)
-
+    fig,(ax2,ax3) = plt.subplots(2,1,figsize=(5,6.7))
+    plt.subplots_adjust(hspace=0.)
+    
     [ax2.plot(wav * (1+z), s, alpha=1,
             c=m.to_rgba(np.abs(cos_dist[i]))) for i,s in enumerate(spec)]
 
@@ -118,7 +118,7 @@ if True:
     
     for ax in [ax2,ax3]:
         ax.set_xlim(60,1000)
-        ax.set_xlabel('$\lambda \,/\, \mathrm{\mu m}$',size=12)
+        ax.set_xlabel('$\lambda_{\mathrm{obs}} \,/\, \mathrm{\mu m}$',size=12)
         ax.set_xscale('log')
         formatter = ScalarFormatter()
         formatter.set_scientific(False)
@@ -127,10 +127,11 @@ if True:
         ax.xaxis.set_major_locator(MultipleLocator(100))
         ax.set_xticks([60,70,80,90,100,200,300,400,500,600,700,800,900,1000])
         ax.set_xticklabels(['60','','','','100','200','','400','','','700','','','1000'])
+        ax.grid(alpha=0.3)
     
     ax3.hlines(1, 60,1000, linestyle='dashed', color='black')
     # mean_flux = np.round(np.mean(flux_850),2)
-    # ax1.text(0.2,0.9,f'$z = {z}$',size=13,transform=ax1.transAxes)
+    ax2.text(0.03,0.9,f'$z = {z}$',size=12,transform=ax2.transAxes)
     # ax1.text(0.2,0.8,'$S_{850} = %s$'%mean_flux,size=13,transform=ax1.transAxes)
     # ax3.set_xlabel('$\lambda \,/\, \AA$',size=13)
     #ax3.set_xlim(250,1000)
@@ -138,12 +139,13 @@ if True:
     cax = fig.add_axes([0.68, 0.7, 0.04, 0.15])
     cbar = fig.colorbar(m, aspect=10, orientation='vertical',
                         cax=cax, label='$\left| \,\mathrm{Cosine \; similarity}\, \\right|$')
+    
+    ax2.set_xticklabels([])
 
     # for i,_l in enumerate(lum_hr):
     #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))
     # ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
     # plt.show()
-    plt.savefig(f'plots/cosine_similarity_g{gidx}.png',dpi=300,bbox_inches='tight')
-    plt.close()
+    plt.savefig(f'plots/cosine_similarity_g{gidx}.pdf',dpi=300,bbox_inches='tight'); plt.close()
 
 

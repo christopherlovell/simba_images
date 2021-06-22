@@ -305,9 +305,6 @@ class Schechter():
 
     def sample(self, volume, D_lowlim, inf_lim=100):
         D, cdf = self._CDF(D_lowlim, normed=False, inf_lim=inf_lim)
-        # n2 = self.binPhi(D_lowlim, inf_lim)*volume
-
-        # --- Not strictly correct but I can't think of a better approach
         n = np.random.poisson(volume * cdf[-1])
         ncdf = cdf/cdf[-1]
         D_sample = np.interp(np.random.random(n), ncdf, D)
