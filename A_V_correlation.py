@@ -9,8 +9,11 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
-    
+import matplotlib.ticker as ticker
+import matplotlib.patheffects as pe
+
 from scipy.spatial.distance import cdist
+from scipy.stats import pearsonr
 
 import sphviewer as sph
 from sphviewer.tools import cmaps
@@ -19,7 +22,7 @@ import yt
 import caesar
 from caesar.pyloser import pyloser
 from caesar.utils import rotator
-from caesar.cyloser import compute_AV, init_kerntab, _star_AV
+from caesar.cyloser import compute_AV, init_kerntab, star_AV
 from caesar.data_manager import DataManager
 from caesar.utils import rotator
 
@@ -58,7 +61,7 @@ def transform_coods(theta,phi,tol=20,test=False):
 
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
-cs.data_manager = DataManager(cs)
+# cs.data_manager = DataManager(cs)
 
 _dat = json.load(open('m100/galaxy_selection.json','r'))
 halos = [cs.halos[n['hidx']] for k,n in _dat['078'].items()]
@@ -91,7 +94,7 @@ for s,s_file in enumerate(subset_files):
     halo = halos[s]
     galaxy = galaxies[s]
     hcood = galaxy.pos.value
-    phot = pyloser.photometry(cs, halo)
+    phot = pyloser.photometry(cs, halo, ds=ds)
     phot.ssp_table_file = '/home/c.lovell/codes/caesar/FSPS_Chab_EL.hdf5'
     init_kerntab(phot)
 
@@ -149,13 +152,13 @@ for s,s_file in enumerate(subset_files):
 
 
         for ip in np.arange(np.sum(_smask)):
-            A_V[s][i][int(ip)] = _star_AV(ip, idir, igstart, igend, _spos, _gpos, 
+            A_V[s][i][int(ip)] = star_AV(ip, idir, igstart, igend, _spos, _gpos, 
                                   gm[_gmask], gZ[_gmask], ghsm[_gmask], 
                                   Lbox, nkerntab, kerntab, redshift, 
                                   dtm_MW,  NHcol_fact, AV_fact, usedust)
             
         for ip in np.arange(np.sum(_gmask)):
-            A_V_gas[s][i][int(ip)] = _star_AV(ip, idir, igstart, igend, _gpos, _gpos, 
+            A_V_gas[s][i][int(ip)] = star_AV(ip, idir, igstart, igend, _gpos, _gpos, 
                                   gm[_gmask], gZ[_gmask], ghsm[_gmask], 
                                   Lbox, nkerntab, kerntab, redshift, 
                                   dtm_MW,  NHcol_fact, AV_fact, usedust)
@@ -179,14 +182,19 @@ A_V = {int(k): {int(kk): np.array(vv) for kk, vv in v.items()} for k, v in A_V.i
 A_V_gas = {int(k): {int(kk): np.array(vv) for kk, vv in v.items()} for k, v in A_V_gas.items()}
 
 
+from simba import simba
+sb = simba()
+
+
+z = cs.simulation.redshift
+
 _g = 0
 gidx = galaxies[_g].GroupID 
 with h5py.File('sed_out_hires.h5','r') as f:
     wav = f['%s/Wavelength'%gidx][:]
     spec = f['%s/SED'%gidx][:]
+    spec = sb.luminosity_to_flux_density(wav,spec,z)
     # flux_850 = f['%s/850 flux'%gidx][:]
-
-z = cs.simulation.redshift
 
 ## Plot cumulative A_V distribution ##
 lenAV = len(A_V_gas[_g][0])
@@ -248,42 +256,43 @@ cax = fig.add_axes([0.14, 0.7, 0.04, 0.15])
 cbar = fig.colorbar(m, aspect=10, orientation='vertical',
                     cax=cax, label='$A_V$')
 
-# plt.show()
-# plt.savefig(f'plots/A_V_sed_g{gidx}.png',dpi=300,bbox_inches='tight')
-plt.close()
+plt.show()
+# plt.savefig(f'plots/A_V_sed_g{gidx}.png',dpi=300,bbox_inches='tight'); plt.close()
 
 
-from scipy.stats import pearsonr
+galaxy_names = {3: 'Smiley', 8: 'Haydon', 51: 'Guillam', 54: 'Alleline',
+                94: 'Esterhase', 100: 'Prideaux', 134: 'Bland', 139: 'Lacon'}
 
-fig, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2, 4, figsize=(12, 8.5))
+fig, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2, 4, figsize=(12, 7.6))
 axes = [ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8]
-plt.subplots_adjust(wspace=0.2,hspace=0.1)
+plt.subplots_adjust(wspace=0.3,hspace=0.1)
 
-for _g,(ax,c) in enumerate(zip(axes,[0,4,1,5,2,6,7,3])):
+for _g,(ax,c) in enumerate(zip(axes,[0,1,2,3,4,5,6,7])):
     gidx = galaxies[_g].GroupID
     with h5py.File('sed_out_hires.h5','r') as f:
         wav = f['%s/Wavelength'%gidx][:]
         spec = f['%s/SED'%gidx][:]
+        spec = sb.luminosity_to_flux_density(wav,spec,z).value
 
-    _s = spec[:,np.argmin(np.abs((wav*(1+z))-350))]
+    _s = spec[:,np.argmin(np.abs((wav*(1+z))-250))]
     _a_v = np.array([(np.percentile(A_V_gas[_g][i],90)) for i in np.arange(50)])
-    ax.scatter(_s, _a_v, color='C%i'%c)
+    ax.scatter(_s, _a_v, color='C%i'%c, s=8)
 
     p = np.polyfit(_s,_a_v,deg=1)
     x = np.linspace(_s.min(),_s.max(),100)
-    ax.plot(x,p[0]*x + p[1], color='C%i'%c)
+    ax.plot(x,p[0]*x + p[1], color='C%i'%c, 
+            path_effects=[pe.Stroke(linewidth=5, foreground='black'), pe.Normal()])
 
-    ax.text(0.87,0.95,'gidx: %i'%gidx,transform=ax.transAxes, ha='right')
-    ax.text(0.87,0.85,'$\\rho = %.2f$'%round(pearsonr(_s,_a_v)[0],2), 
+    ax.text(0.94, 0.95, galaxy_names[gidx], transform=ax.transAxes, ha='right')
+    ax.text(0.94, 0.88, '$\\rho = %.2f$'%round(pearsonr(_s,_a_v)[0],2), 
             transform=ax.transAxes, ha='right')
 
 
 for ax in [ax1,ax5]:
-    # ax.set_ylabel('$\mathrm{log_{10}} \; \left( \sum^{N_{gas}}_{g=0} A_{V,g}(\\theta,\phi) \\right)$')
-    ax.set_ylabel('$P_{90} \; (A_{V,g})$')
+    ax.set_ylabel('$P_{90} \; (A_{V})$')
     
 for ax in [ax5,ax6,ax7,ax8]:
-    ax.set_xlabel('$S_{350 \mu m, g} \, (\\theta, \phi)$')
+    ax.set_xlabel('$S_{250 \mu m} \,/\, \mathrm{mJy}$')
 
 # plt.show()
 plt.savefig('plots/A_V_gas_p90.png',dpi=300,bbox_inches='tight')

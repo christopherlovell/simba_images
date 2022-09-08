@@ -59,7 +59,7 @@ rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run'
 
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
-cs.data_manager = DataManager(cs)
+# cs.data_manager = DataManager(cs)
 
 _dat = json.load(open('m100/galaxy_selection.json','r'))
 galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
@@ -114,19 +114,20 @@ if True:
     ax2.set_ylabel('$S \,/\, \mathrm{mJy}$', size=13)
     
     ax3.set_ylabel('$S_i \,/\, \mathrm{ \left< S \\right>}$',size=13)
-    ax3.set_ylim(0.3,1.7)
+    ax3.set_ylim(0.0,3)
+    # ax3.set_ylim(0.3,1.7)
     
     for ax in [ax2,ax3]:
-        ax.set_xlim(60,1000)
+        ax.set_xlim(0.1,1000)
         ax.set_xlabel('$\lambda_{\mathrm{obs}} \,/\, \mathrm{\mu m}$',size=12)
         ax.set_xscale('log')
-        formatter = ScalarFormatter()
-        formatter.set_scientific(False)
-        ax.xaxis.set_major_formatter(formatter)
-        ax.xaxis.set_minor_formatter(formatter)
-        ax.xaxis.set_major_locator(MultipleLocator(100))
-        ax.set_xticks([60,70,80,90,100,200,300,400,500,600,700,800,900,1000])
-        ax.set_xticklabels(['60','','','','100','200','','400','','','700','','','1000'])
+        # formatter = ScalarFormatter()
+        # formatter.set_scientific(False)
+        # ax.xaxis.set_major_formatter(formatter)
+        # ax.xaxis.set_minor_formatter(formatter)
+        # ax.xaxis.set_major_locator(MultipleLocator(100))
+        # ax.set_xticks([60,70,80,90,100,200,300,400,500,600,700,800,900,1000])
+        # ax.set_xticklabels(['60','','','','100','200','','400','','','700','','','1000'])
         ax.grid(alpha=0.3)
     
     ax3.hlines(1, 60,1000, linestyle='dashed', color='black')
@@ -145,7 +146,7 @@ if True:
     # for i,_l in enumerate(lum_hr):
     #     ax.plot(np.log10(wav_hr),_l,alpha=0.1,color=m.to_rgba(np.abs(cos_dist[i])))
     # ax.plot(np.log10(wav),lum.T/lum_hr.T,alpha=0.1,color='black')
-    # plt.show()
-    plt.savefig(f'plots/cosine_similarity_g{gidx}.pdf',dpi=300,bbox_inches='tight'); plt.close()
+    plt.show()
+    # plt.savefig(f'plots/cosine_similarity_g{gidx}.pdf',dpi=300,bbox_inches='tight'); plt.close()
 
 

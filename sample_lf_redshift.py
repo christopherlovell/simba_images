@@ -111,7 +111,7 @@ ax2.errorbar(bins, dim_dist[1], yerr=[dim_dist[1] - dim_dist[0],dim_dist[2] - di
              linestyle='none', color='grey', marker='o', 
              markeredgewidth=1, markeredgecolor='black')
 
-ax2.set_xlabel('$z$'); ax2.set_ylabel('$D \;[\mathrm{Dimming}]$'); ax2.set_ylim(0,0.48)
+ax2.set_xlabel('$z$'); ax2.set_ylabel('$D \;[\mathrm{Orientation \; factor}]$'); ax2.set_ylim(0,0.48)
 ax2.set_xticklabels([])
 
 ## plot redshift distribution for different selections
@@ -121,7 +121,7 @@ ax1.hist(zeds, histtype='step', density=True, bins=binlims,
         label='$\mathrm{All} \; (\mu = %i; \sigma=%i)$'%(_mean,_std))
 ax1.hist(zeds[S > slim], histtype='step', density=True, label='$S > S_{\mathrm{lim}}$', bins=binlims)
 ax1.hist(zeds[new_S > slim], histtype='step', density=True, 
-         label='$S_{\mathrm{dimmed}} > S_{\mathrm{lim}}$', bins=binlims)
+         label='$S_{\mathrm{orientation}} > S_{\mathrm{lim}}$', bins=binlims)
 ax1.legend()
 #ax1.set_xticklabels('')
 ax1.xaxis.tick_top(); ax1.set_xlabel('$z$'); ax1.xaxis.set_label_position('top') 
@@ -203,8 +203,8 @@ for i, slim in enumerate(Slim_array):
 
 ax.set_xlim(0,1.0)
 ax.set_ylim(0,1)
-ax.set_xlabel('$D$ [Dimming]')
-ax.set_ylabel('$N_{\mathrm{dim}} \,/\, N$')
+ax.set_xlabel('$D$ [Orientation factor]')
+ax.set_ylabel('$N_{\mathrm{ori}} \,/\, N$')
 ax.grid(alpha=0.2)
 cbar = fig.colorbar(sm)
 cbar.set_ticks(np.arange(Ns)+0.5)

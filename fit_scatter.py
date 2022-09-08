@@ -20,7 +20,7 @@ rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run'
 
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
-cs.data_manager = DataManager(cs)
+# cs.data_manager = DataManager(cs)
 z = cs.simulation.redshift
 _dat = json.load(open('m100/galaxy_selection.json','r'))
 galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
@@ -128,7 +128,7 @@ ax2.legend(frameon=False, title='$\lambda_{\mathrm{rest}} \,/\, \mathrm{\mu m}=$
 # ax.text(0.05,0.9,'$a = %.2f$'%popt[0], transform=ax.transAxes, size=10)
 ax2.set_xlim(0.,1.0)
 ax2.set_ylim(-0.1,2.8)
-ax2.set_xlabel('$D\,[\mathrm{Dimming}]$') # S_{i} \,/\, S_{i}^{\mathrm{max}}$')
+ax2.set_xlabel('$D\;[\mathrm{Orientation \; factor}]$') # S_{i} \,/\, S_{i}^{\mathrm{max}}$')
 ax2.set_ylabel('$\mathrm{log_{10}(Normalised \; frequency)}$')
 plt.show()
 # fname = 'plots/dimming_distribution.pdf'; print(fname)

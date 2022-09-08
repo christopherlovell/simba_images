@@ -178,8 +178,8 @@ class simba:
         return y
    
 
-    def calc_mags(self,wl,lum,z,filt_wl=[845,846,850,854,855],
-                  filt_trans=[0.,1.,1.,1.,0.],lambda_pivot=850):
+    def calc_mags(self, wl, lum, z, filt_wl=np.array([845,846,850,854,855]),
+                  filt_trans=np.array([0.,1.,1.,1.,0.]), lambda_pivot=850):
         """
         
         Args:

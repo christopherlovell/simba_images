@@ -54,7 +54,7 @@ rt_directory = '/blue/narayanan/c.lovell/simba/m100n1024/run'
 
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
-cs.data_manager = DataManager(cs)
+# cs.data_manager = DataManager(cs)
 
 _dat = json.load(open('m100/galaxy_selection.json','r'))
 galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
@@ -66,6 +66,12 @@ galaxies = [cs.galaxies[int(k)] for k in _dat['078'].keys()]
 np.random.seed(0); _N = 50
 theta = np.arccos(1 - 2 * np.random.rand(_N)) #* (180 / np.pi)
 phi   = 2 * np.pi * np.random.rand(_N) #* (180 / np.pi)
+    
+coods = np.zeros((len(theta),3))
+coods[:,0] = np.sin(theta) * np.cos(phi)
+coods[:,1] = np.sin(theta) * np.sin(phi)
+coods[:,2] = np.cos(theta)
+coods = np.round(coods,2)
 
 # filt_wl, filt_trans = sb.scuba850_filter()
 
@@ -78,12 +84,6 @@ S350 = {gidx: None for gidx in gindexes}
 for i,gidx in enumerate(gindexes):
     print(gidx)
     _g = cs.galaxies[gidx]     
-
-    coods = np.zeros((len(theta),3))
-    coods[:,0] = np.sin(theta) * np.cos(phi)
-    coods[:,1] = np.sin(theta) * np.sin(phi)
-    coods[:,2] = np.cos(theta)
-    coods = np.round(coods,2)
 
     _L = recalculate_ang_mom_vector(_g,ptype=0)
     cos_dist[gidx] = [round(1 - cosine(_c,_L),3) for _c in coods] 
@@ -131,6 +131,7 @@ ax.set_ylim(0,1)
 ax.set_ylabel('$C_i$', size=14)
 ax.set_xlabel('$S_{250,i} \,/\, S_{250,\mathrm{max}}$', size=14)
 ax.legend(ncol=2,title='Clear Disc:             No Disc:')
-# plt.show()
-plt.savefig('plots/cosine_similarity.pdf',dpi=300,bbox_inches='tight'); plt.close()
+
+plt.show()
+# plt.savefig('plots/cosine_similarity.pdf',dpi=300,bbox_inches='tight'); plt.close()
 

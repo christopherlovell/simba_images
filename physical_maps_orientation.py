@@ -139,9 +139,9 @@ for k,gidx in enumerate(['94','100','134','139']):
             # Psfr = sph.Particles(halog_pos[mask], halog_sfr[mask]) 
 
 
-        extent = 24.5
+        extent = 18.5
         sm,img = plot_dist(fig, ax, Pd, hcood, cmaps.twilight(), 
-                             vmin=1e2, vmax=1e10, extent=extent, p=_p, t=_t, roll=_roll) 
+                             vmin=1e5, vmax=1e10, extent=extent, p=_p, t=_t, roll=_roll) 
         # sm4,img4 = plot_dist(fig, ax4, Psfr, hcood, cmaps.sunlight(), 
         #                      vmin=0.1, extent=extent, p=_p, t=_t, roll=_roll) 
 
@@ -220,9 +220,9 @@ for ax in axes[:,1:].flatten():
     ax.set_yticklabels([])
 
 
-# plt.show() 
+plt.show() 
 # plt.savefig('plots/dust_maps.pdf', dpi=300, bbox_inches='tight'); plt.close()
-plt.savefig('plots/dust_maps_B.pdf', dpi=300, bbox_inches='tight'); plt.close()
+# plt.savefig('plots/dust_maps_B.pdf', dpi=300, bbox_inches='tight'); plt.close()
 
 
 

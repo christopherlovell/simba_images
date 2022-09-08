@@ -92,11 +92,11 @@ for _ax in [ax,secax]:
     _ax.set_xticklabels(['20','','','','60','','','','100','200','','400','','','700','','','1000'])
 
 ax.set_ylabel('$\sigma \,/\, \mathrm{mJy}$', size=12)
-ax.set_xlim(60,1600)
+ax.set_xlim(0.01,1600)
 ax.set_ylim(0,16)
 ax.text(0.84,0.05,'$z = 2.025$', transform=ax.transAxes, size=12)
 ax.legend(frameon=False, loc='upper right') # title='Galaxy:', )
 
-# plt.show()
-plt.savefig('plots/sigma_sed.pdf', dpi=300, bbox_inches='tight'); plt.close()
+plt.show()
+# plt.savefig('plots/sigma_sed.pdf', dpi=300, bbox_inches='tight'); plt.close()
 

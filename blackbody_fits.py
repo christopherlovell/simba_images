@@ -9,6 +9,7 @@ import glob
 from astropy import constants 
 import astropy.units as u
 from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
 from hyperion.model import ModelOutput
@@ -139,9 +140,10 @@ for _c,_g in enumerate(galaxies):
         
         Tmbb[gidx][i] = popt[0]
         # y = mbb_pl(x,z,popt[0],beta=_beta,alpha=popt[1],Nbb=popt[2]) * u.mJy    
-        y = mbb_norm(x,z,popt[0],_beta,popt[1],_lambda_0) * u.mJy    
-        y = y.to(u.erg  / (u.s * u.cm**2 * u.Hz))
         x = np.logspace(-1,4,int(1e3)); _nu = (constants.c / (x * u.micron)).to(u.Hz)
+        y = mbb_norm(_x,z,popt[0],_beta,popt[1],_lambda_0) * u.mJy    
+        y = y.to(u.erg  / (u.s * u.cm**2 * u.Hz))
+
         _out = np.trapz(y[::-1],_nu[::-1]) * (4 * np.pi * dl**2)
         Lsol[gidx][i] = _out.to(u.solLum).value
 

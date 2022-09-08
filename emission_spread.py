@@ -23,7 +23,7 @@ sb = simba()
 snap = '078'
 _dir = '/orange/narayanan/desika.narayanan/gizmo_runs/simba/m100n1024/'
 cs = caesar.load(_dir+'Groups/m100n1024_078.hdf5')
-cs.data_manager = DataManager(cs)
+# cs.data_manager = DataManager(cs)
 z = cs.simulation.redshift
 
 _dat = json.load(open('m100/galaxy_selection.json','r'))
@@ -43,9 +43,10 @@ for _c,_g in enumerate(galaxies):
         spec_max = spec[:,_max]
         lambda_max = wav[_max]
         diff[_c] = "%.2f"%(np.max(spec_max).value - np.min(spec_max).value)
-        print(_c, np.min(spec_max), np.max(spec_max), diff[_c])
+        print(_c, "max: %.2f"%np.min(spec_max).value, "| min: %.2f"%np.max(spec_max).value,
+              "| diff:", diff[_c])
         frac_spec[_c] = np.max(spec_max) / np.min(spec_max)
-        print(frac_spec[_c])
+        print("%.2f"%frac_spec[_c])
         frac_lambda[_c] = np.max(lambda_max) - np.min(lambda_max)
 
 
